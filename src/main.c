@@ -9,6 +9,7 @@
 #include "board.h"
 #include "sc7i22.h"
 #include "uwb.h"
+#include "../data/setup_soc.cgen"
 
 static uint32_t cb_hard_fault(hard_fault_info_t *info, void *_)
 {
@@ -190,7 +191,7 @@ uint32_t query_deep_sleep_allowed(void *dummy, void *user_data)
 int app_main()
 {
     //    platform_set_evt_callback(PLATFORM_CB_EVT_PROFILE_INIT, setup_profile, NULL);
-
+    cube_soc_init();
     // setup handlers
     platform_set_evt_callback(PLATFORM_CB_EVT_HARD_FAULT, (f_platform_evt_cb)cb_hard_fault, NULL);
     platform_set_evt_callback(PLATFORM_CB_EVT_ASSERTION, (f_platform_evt_cb)cb_assertion, NULL);
@@ -198,10 +199,12 @@ int app_main()
     platform_set_evt_callback(PLATFORM_CB_EVT_ON_DEEP_SLEEP_WAKEUP, on_deep_sleep_wakeup, NULL);
     platform_set_evt_callback(PLATFORM_CB_EVT_QUERY_DEEP_SLEEP_ALLOWED, query_deep_sleep_allowed, NULL);
     platform_set_evt_callback(PLATFORM_CB_EVT_PUTC, (f_platform_evt_cb)cb_putc, NULL);
+    SYSCTRL_Init();
 
     setup_peripherals();
+    cube_setup_peripherals();
 
-    // sc7122_init();
+    sc7122_init();
     uwb_uart_init();
     return 0;
 }
