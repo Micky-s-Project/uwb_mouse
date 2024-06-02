@@ -74,8 +74,8 @@ void algo_uwb_data_update_event_handler(char data_char)
         if (end_index != NULL)
         {
             int tmp = 0;
-            sscanf_s(d1_index, "NO(%d). D: %f, A: %f, *", &tmp, &(uwb_data.dis), &(uwb_data.aoa));
-            strcpy_s((char *)uwb_data_pool, 128, (char *)(end_index));
+            sscanf(d1_index, "NO(%d). D: %f, A: %f, *", &tmp, &(uwb_data.dis), &(uwb_data.aoa));
+            strcpy((char *)uwb_data_pool, (char *)(end_index));
             uwb_data_pool_index = 0;
 
             tick = get_tick();
