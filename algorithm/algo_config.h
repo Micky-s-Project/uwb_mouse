@@ -1,7 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define ALGO_DEBUG               printf
+// #define ALGO_DEBUG               printf
+#define ALGO_DEBUG do{} while (0);
 
 #define SENSOR_GYRO_RANGE        2000
 #define SENSOR_ACC_RANGE         16

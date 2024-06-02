@@ -5,6 +5,7 @@
 #include "attitude_calculator.h"
 #include <math.h>
 #include "algo_interfaces.h"
+#include "platform_api.h"
 
 #define queue_len 20
 
@@ -73,6 +74,7 @@ void position_calculate(float t, uint8_t uwb_ready)
 
         position[0] = x_pos_kalman.x_k_1.pData[0];
         position[1] = y_pos_kalman.x_k_1.pData[0];
+        platform_printf("x:%f,y:%f\n", position[0], position[1]);
     }
 }
 
