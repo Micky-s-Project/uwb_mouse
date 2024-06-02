@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include "platform_api.h"
-
+#include "attitude_calculator.h"
 /*
             时间戳
 */

@@ -15,9 +15,10 @@
 #define I2C_BASE(port) ((port) == I2C_PORT_0 ? APB_I2C0 : APB_I2C1)
 #define SC7I22_I2C_ADDR 0x19
 
-int16_t *acc, *gyr;
+int16_t *imu_raw_data;
 uint8_t sensor_data[12];
 uint8_t sensor_is_inited = 0;
+uint8_t sensor_is_send_seq = 0;
 static void sensor_read(uint8_t reg, uint8_t *data, uint16_t len);
 static uint8_t sensor_read_u8(uint8_t reg);
 
@@ -28,15 +29,59 @@ static SemaphoreHandle_t sensor_xSemaphore = NULL;
 uint32_t i2c_irq(void *p)
 {
     uint32_t status = I2C_GetIntState(APB_I2C0);
+
     if (status & (1 << I2C_STATUS_CMPL))
     {
         I2C_ClearIntState(APB_I2C0, (1 << I2C_STATUS_CMPL));
-        platform_printf("i2c_irq evt\r\n");
+
+        // switch (sensor_is_send_seq)
+        // {
+        // case 0: // 发送传输的地址和寄存器
+        //         //             I2C_DmaEnable(APB_I2C0, 1);
+        //         //             I2C_CtrlUpdateDirection(APB_I2C0, I2C_TRANSACTION_SLAVE2MASTER);
+        //         //             I2C_CtrlUpdateDataCnt(APB_I2C0, DATA_CNT);
+
+        //     // #define I2C_DMA_RX_CHANNEL (0) // DMA channel 0
+        //     //             peripherals_i2c_rxfifo_to_dma(I2C_DMA_RX_CHANNEL, read_data,
+        //     //                                           sizeof(read_data));
+
+        //     //             I2C_CommandWrite(APB_I2C0, I2C_COMMAND_ISSUE_DATA_TRANSACTION);
+        //     //             sensor_is_send_seq = 1;
+        //     break;
+        // case 1: // 传输接收
+        //     DMA_Descriptor descriptor __attribute__((aligned(8)));
+
+        //     descriptor.Next = (DMA_Descriptor *)0;
+        //     DMA_PreparePeripheral2Mem(&descriptor, dst, SYSCTRL_DMA_I2C0,
+        //                               size, DMA_ADDRESS_INC, 0);
+
+        //     DMA_EnableChannel(channel_id, &descriptor);
+        //     sensor_is_send_seq = 2;
+        //     break;
+        // case 2: // 接收完成
+        platform_printf("tran done\n");
+        //     sensor_is_send_seq = 0;
+        //     break;
+        // default:
+        //     break;
+        // }
     }
     return 0;
 }
+uint8_t read_data[14] = {SC7I22_I2C_ADDR, 0x0c};
 
-uint32_t gpio_isr(void *user_data)
+void peripherals_i2c_rxfifo_to_dma(int channel_id, void *dst, int size)
+{
+    DMA_Descriptor descriptor __attribute__((aligned(8)));
+
+    descriptor.Next = (DMA_Descriptor *)0;
+    DMA_PreparePeripheral2Mem(&descriptor, dst, SYSCTRL_DMA_I2C0,
+                              size, DMA_ADDRESS_INC, 0);
+
+    DMA_EnableChannel(channel_id, &descriptor);
+}
+
+uint32_t gpio0_isr(void *user_data)
 {
     uint32_t current = GIO_ReadAll();
     uint32_t status = GIO_GetAllIntStatus();
@@ -47,6 +92,17 @@ uint32_t gpio_isr(void *user_data)
     {
         xSemaphoreGiveFromISR(sensor_xSemaphore, &xHigherPriorityTaskWoken);
     }
+
+//     I2C_DmaEnable(APB_I2C0, 1);
+//     I2C_CtrlUpdateDirection(APB_I2C0, I2C_TRANSACTION_MASTER2SLAVE);
+//     I2C_CtrlUpdateDataCnt(APB_I2C0, 14);
+
+// #define I2C_DMA_RX_CHANNEL (0) // DMA channel 0
+//     peripherals_i2c_rxfifo_to_dma(I2C_DMA_RX_CHANNEL, read_data, sizeof(read_data));
+
+//     I2C_CommandWrite(APB_I2C0, I2C_COMMAND_ISSUE_DATA_TRANSACTION);
+//     sensor_is_send_seq = 1;
+
     return 0;
 }
 
@@ -77,13 +133,18 @@ static void sensor_write_u8(uint8_t reg, uint8_t data)
 
 static void sensor_updata_task(void *param)
 {
-    
-    PINCTRL_SelI2cIn(I2C_PORT, IIC_SCL_PIN, IIC_SDA_PIN);
-    I2C_Config(APB_I2C0, I2C_ROLE_MASTER, I2C_ADDRESSING_MODE_07BIT, SC7I22_I2C_ADDR);
-    I2C_ConfigClkFrequency(APB_I2C0, I2C_CLOCKFREQUENY_STANDARD);
-    // I2C_IntEnable(APB_I2C0, (1 << I2C_INT_CMPL));
-    I2C_Enable(APB_I2C0, 1);
 
+    //    PINCTRL_SelI2cIn(I2C_PORT, IIC_SCL_PIN, IIC_SDA_PIN);
+    //    I2C_Config(APB_I2C0, I2C_ROLE_MASTER, I2C_ADDRESSING_MODE_07BIT, SC7I22_I2C_ADDR);
+    //    I2C_ConfigClkFrequency(APB_I2C0, I2C_CLOCKFREQUENY_STANDARD);
+    // I2C0
+    PINCTRL_SelI2cIn(0, 7, 8);
+    PINCTRL_SetPadMux(7, 106);
+    PINCTRL_SetPadMux(8, 107);
+    PINCTRL_SetPadMux(7, 24);
+    PINCTRL_SetPadMux(8, 25);
+    I2C_IntEnable(APB_I2C0, (1 << I2C_INT_CMPL));
+    //    I2C_Enable(APB_I2C0, 1);
     i2c_init(I2C_PORT);
 
     uint8_t who_am_i = sensor_read_u8(0x01);
@@ -114,31 +175,28 @@ static void sensor_updata_task(void *param)
 
     vTaskDelay(pdMS_TO_TICKS(10));
 
-    I2C_DmaEnable(APB_I2C0, 1);
+    // I2C_DmaEnable(APB_I2C0, 1);
     // I2C_IntEnable(APB_I2C0, (1 << I2C_INT_CMPL));
     // platform_set_irq_callback(PLATFORM_CB_IRQ_I2C0, i2c_irq, NULL);
+    // // init dma
+    // SYSCTRL_ClearClkGateMulti(1 << SYSCTRL_ClkGate_APB_DMA);
+    // DMA_Reset(1);
+    // DMA_Reset(0);
+
     // sensor_read(0x0A, sensor_data, sizeof(sensor_data));
     while (1)
     {
         if (xSemaphoreTake(sensor_xSemaphore, portMAX_DELAY) == pdTRUE)
         {
             sensor_read(0x0C, sensor_data, sizeof(sensor_data));
-            // uint8_t *data_heat = &sensor_data[3];
-            acc = (int16_t *)sensor_data;
-            gyr = (int16_t *)&sensor_data[3];
-            // for (uint8_t i = 0; i < 3; i++)
-            // {
-            //     acc[i] = __REV16(acc[i]);
-            //     gyr[i] = __REV16(gyr[i]);
-            // }
-            // platform_printf("acc_x=%d,acc_y=%d,acc_z=%d,gyr_x=%d,gyr_y=%d,gyr_z=%d\r\n",
-            //                 acc[0], acc[1], acc[2], gyr[0], gyr[1], gyr[2]);
-            // platform_printf("%02x,%02x,%02x,%02x,%02x,%02x,%02x\r\n", sensor_data[0], sensor_data[1], sensor_data[2], sensor_data[3], sensor_data[4], sensor_data[5], sensor_data[6]);
+            imu_raw_data = (int16_t *)sensor_data;
+            for (uint8_t i = 0; i < 6; i++)
+            {
+                imu_raw_data[i] = __REV16(imu_raw_data[i]);
+            }
+            platform_printf("acc_x=%d,acc_y=%d,acc_z=%d,gyr_x=%d,gyr_y=%d,gyr_z=%d\r\n",
+                            imu_raw_data[0], imu_raw_data[1], imu_raw_data[2], imu_raw_data[3], imu_raw_data[4], imu_raw_data[5]);
         }
-        // vTaskDelay(pdMS_TO_TICKS(100));
-        // platform_printf("sensor_updata_task running !!\r\n");
-        // sensor_read(0x0A, sensor_data, sizeof(sensor_data));
-        // platform_printf("%x %x %x %x %x %x %x \r\n", sensor_data[0], sensor_data[1], sensor_data[2], sensor_data[3], sensor_data[4], sensor_data[5], sensor_data[6]);
     }
 }
 
@@ -148,9 +206,10 @@ void sc7122_init()
     vSemaphoreCreateBinary(sensor_xSemaphore);
     /* config gpio irq */
     // PINCTRL_Pull(SENSOR_IRQ_PIN, PINCTRL_PULL_UP);
-    GIO_SetDirection(SENSOR_IRQ_PIN, GIO_DIR_INPUT);
-    GIO_ConfigIntSource(SENSOR_IRQ_PIN, GIO_INT_EN_LOGIC_HIGH_OR_RISING_EDGE, GIO_INT_EDGE);
-    platform_set_irq_callback(PLATFORM_CB_IRQ_GPIO, gpio_isr, NULL);
+
+    //    GIO_SetDirection(SENSOR_IRQ_PIN, GIO_DIR_INPUT);
+    //    GIO_ConfigIntSource(SENSOR_IRQ_PIN, GIO_INT_EN_LOGIC_HIGH_OR_RISING_EDGE, GIO_INT_EDGE);
+    platform_set_irq_callback(PLATFORM_CB_IRQ_GPIO, gpio0_isr, NULL);
 
     xTaskCreate(sensor_updata_task, "sensor updata", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, &sensor_task_handle);
 }

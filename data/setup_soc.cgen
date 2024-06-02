@@ -1,0 +1,122 @@
+void cube_soc_init(void)
+{
+platform_config(PLATFORM_CFG_RT_OSC_EN, PLATFORM_CFG_DISABLE);
+platform_config(PLATFORM_CFG_RT_CLK_ACC, 500);
+
+}
+
+void cube_setup_peripherals(void)
+{
+SYSCTRL_SelectUSBClk(SYSCTRL_CLK_PLL_DIV_7);
+SYSCTRL_SelectUartClk(UART_PORT_0, SYSCTRL_CLK_HCLK);
+SYSCTRL_SelectUartClk(UART_PORT_1, SYSCTRL_CLK_HCLK);
+
+SYSCTRL_ClearClkGateMulti((1 << SYSCTRL_ITEM_APB_PinCtrl)
+ | (1 << SYSCTRL_ITEM_APB_GPIO0)
+ | (1 << SYSCTRL_ITEM_APB_I2C0)
+ | (1 << SYSCTRL_ITEM_APB_UART0)
+ | (1 << SYSCTRL_ITEM_APB_UART1));
+
+// SYSCTRL_SelectUsedDmaItems(...)
+
+// GPIO0
+GIO_EnableRetentionGroupA(0);// PINCTRL_SetPadMux(5, 0)
+// PINCTRL_SetPadMux(6, 0)
+// PINCTRL_SetPadMux(10, 0)
+GIO_SetDirection((GIO_Index_t)5, (GIO_Direction_t)1);
+GIO_WriteValue((GIO_Index_t)5, 1);
+GIO_SetDirection((GIO_Index_t)6, (GIO_Direction_t)0);
+GIO_ConfigIntSource((GIO_Index_t)6, GIO_INT_EN_LOGIC_HIGH_OR_RISING_EDGE, GIO_INT_EDGE);
+GIO_SetDirection((GIO_Index_t)10, (GIO_Direction_t)1);
+GIO_WriteValue((GIO_Index_t)10, 1);
+
+// I2C0
+// PINCTRL_SelI2cIn(0, 7, 8)
+// PINCTRL_SetPadMux(7, 106)
+// PINCTRL_SetPadMux(8, 107)
+// PINCTRL_SetPadMux(7, 24)
+// PINCTRL_SetPadMux(8, 25)
+
+// SWD
+// PINCTRL_SelSwIn(255, 255)
+// PINCTRL_SetPadMux(127, 2)
+
+// UART0
+// PINCTRL_SetPadMux(1, 20)
+// PINCTRL_SelUartIn(0, 127, 127)
+{
+    APB_UART0->Control = 0;
+    APB_UART0->IntClear = 0;
+    APB_UART0->IntMask = 0;
+    APB_UART0->StatusClear = 0;
+    APB_UART0->IntBaudDivisor = 7;
+    APB_UART0->FractBaudDivisor = 38;
+    APB_UART0->LineCon_H = ( ((UART_PARITY_NOT_CHECK >> 2) & 1) << bsUART_STICK_PARITY ) |  // SPS
+                        (   3      << bsUART_WORD_LENGTH  ) |  // WLEN
+                        (   1      << bsUART_FIFO_ENABLE  ) |  // FEN
+                        (   0      << bsUART_TWO_STOP_BITS) |  // STP2
+                        ( ( UART_PARITY_NOT_CHECK & 3) << bsUART_PARITY_SELECT) ;  // EPS, EPN
+    APB_UART0->FifoSelect =   (1 << bsUART_TRANS_INT_LEVEL)
+                     | (1 << bsUART_RECV_INT_LEVEL);
+    APB_UART0->IntMask = ((uint32_t)0 << bsUART_RECEIVE_INTENAB)  |
+                  ((uint32_t)0 << bsUART_TRANSMIT_INTENAB) |
+                  ((uint32_t)0 << bsUART_TIMEOUT_INTENAB)  |
+                  ((uint32_t)0 << bsUART_FRAME_INTENAB)    |
+                  ((uint32_t)0 << bsUART_PARITY_INTENAB)   |
+                  ((uint32_t)0 << bsUART_BREAK_INTENAB)    |
+                  ((uint32_t)0 << bsUART_OVERRUN_INTENAB);
+    APB_UART0->Control = ((uint32_t)0 << bsUART_RECEIVE_ENABLE) |
+                  ((uint32_t)1 << bsUART_TRANSMIT_ENABLE)|
+                  ((uint32_t)1 << bsUART_ENABLE)         |
+                  ((uint32_t)0 << bsUART_CTS_ENA)        |
+                  ((uint32_t)0 << bsUART_RTS_ENA);
+}
+
+APB_UART0->DmaCon = (0 << 0) | (0 << 1) | (0 << 2);
+
+// UART1
+// PINCTRL_SelUartIn(1, 4, 127)
+// PINCTRL_SetPadMux(4, 104)
+{
+    APB_UART1->Control = 0;
+    APB_UART1->IntClear = 0;
+    APB_UART1->IntMask = 0;
+    APB_UART1->StatusClear = 0;
+    APB_UART1->IntBaudDivisor = 15;
+    APB_UART1->FractBaudDivisor = 12;
+    APB_UART1->LineCon_H = ( ((UART_PARITY_NOT_CHECK >> 2) & 1) << bsUART_STICK_PARITY ) |  // SPS
+                        (   3      << bsUART_WORD_LENGTH  ) |  // WLEN
+                        (   0      << bsUART_FIFO_ENABLE  ) |  // FEN
+                        (   0      << bsUART_TWO_STOP_BITS) |  // STP2
+                        ( ( UART_PARITY_NOT_CHECK & 3) << bsUART_PARITY_SELECT) ;  // EPS, EPN
+    APB_UART1->FifoSelect =   (1 << bsUART_TRANS_INT_LEVEL)
+                     | (0 << bsUART_RECV_INT_LEVEL);
+    APB_UART1->IntMask = ((uint32_t)1 << bsUART_RECEIVE_INTENAB)  |
+                  ((uint32_t)0 << bsUART_TRANSMIT_INTENAB) |
+                  ((uint32_t)1 << bsUART_TIMEOUT_INTENAB)  |
+                  ((uint32_t)1 << bsUART_FRAME_INTENAB)    |
+                  ((uint32_t)1 << bsUART_PARITY_INTENAB)   |
+                  ((uint32_t)1 << bsUART_BREAK_INTENAB)    |
+                  ((uint32_t)1 << bsUART_OVERRUN_INTENAB);
+    APB_UART1->Control = ((uint32_t)1 << bsUART_RECEIVE_ENABLE) |
+                  ((uint32_t)0 << bsUART_TRANSMIT_ENABLE)|
+                  ((uint32_t)1 << bsUART_ENABLE)         |
+                  ((uint32_t)0 << bsUART_CTS_ENA)        |
+                  ((uint32_t)0 << bsUART_RTS_ENA);
+}
+
+APB_UART1->DmaCon = (0 << 0) | (0 << 1) | (0 << 2);
+
+// dump PINCTRL registers
+APB_PINCTRL->OUT_CTRL[1] = 0x03000040; // 0x00000002
+APB_PINCTRL->OUT_CTRL[2] = 0x00000019; // 0x00000000
+APB_PINCTRL->IN_CTRL[0] = 0x01ffffff; // 0x01fffc64
+APB_PINCTRL->IN_CTRL[3] = 0x01ffffff; // 0x01f17fff
+APB_PINCTRL->IN_CTRL[4] = 0x01f41fe4; // 0x01ffffff
+APB_PINCTRL->PS_CTRL[0] = 0x0000019e; // 0x0000001e
+GIO_EnableRetentionGroupA(1);
+}
+
+void cube_on_lle_init(void)
+{
+}
