@@ -32,7 +32,8 @@ void position_calculate(float t, uint8_t uwb_ready)
 
     ALGO_DEBUG("x:%f,%f\n", x[0], x[1]);
 
-    if (x_pos_kalman.init == 0 || y_pos_kalman.init == 0) {
+    if (x_pos_kalman.init == 0 || y_pos_kalman.init == 0)
+    {
         if (uwb_ready)
         {
             float P0[4] = {1, 0, 0, 1};
@@ -44,7 +45,9 @@ void position_calculate(float t, uint8_t uwb_ready)
             kalman2_init(&y_pos_kalman, y_x0, P0, Q, R);
             ALGO_DEBUG("\nposition init!\n\n");
         }
-    } else {
+    }
+    else
+    {
         float v[2] = {0};
         float tt2 = t * t * 0.5f;
 
@@ -56,7 +59,8 @@ void position_calculate(float t, uint8_t uwb_ready)
               u_k_y[2] = {a[1] * tt2, a[1] * t};
         float F_k_k_1[4] = {1, t, 0, 1};
 
-        if (uwb_ready) {
+        if (uwb_ready)
+        {
             cal_v_by_uwb(x, v, t);
             z_k_x[0] = qx.mean;
             z_k_y[1] = qy.mean;
@@ -67,14 +71,18 @@ void position_calculate(float t, uint8_t uwb_ready)
             copy_f32(y_pos_kalman.R_INIT, R_t, 4);
             kalman2_next(&x_pos_kalman, F_k_k_1, z_k_x, u_k_x, 0);
             kalman2_next(&y_pos_kalman, F_k_k_1, z_k_y, u_k_y, 0);
-        } else {
+            position[0] = x_pos_kalman.x_k_1.pData[0];
+            position[1] = y_pos_kalman.x_k_1.pData[0];
+            platform_printf("x:%f,y:%f\n", position[0], position[1]);
+        }
+        else
+        {
+
             kalman2_next(&x_pos_kalman, F_k_k_1, z_k_x, u_k_x, 1);
             kalman2_next(&y_pos_kalman, F_k_k_1, z_k_y, u_k_y, 1);
+            position[0] = x_pos_kalman.x_k_1.pData[0];
+            position[1] = y_pos_kalman.x_k_1.pData[0];
         }
-
-        position[0] = x_pos_kalman.x_k_1.pData[0];
-        position[1] = y_pos_kalman.x_k_1.pData[0];
-        platform_printf("x:%f,y:%f\n", position[0], position[1]);
     }
 }
 

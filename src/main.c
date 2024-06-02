@@ -206,5 +206,6 @@ int app_main()
 
     sc7122_init();
     uwb_uart_init();
+    
     return 0;
 }

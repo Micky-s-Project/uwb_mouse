@@ -6,6 +6,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "algo_interfaces.h"
 
 #define SENSOR_IRQ_PIN GIO_GPIO_6
 #define IIC_SCL_PIN GIO_GPIO_7
@@ -93,15 +94,15 @@ uint32_t gpio0_isr(void *user_data)
         xSemaphoreGiveFromISR(sensor_xSemaphore, &xHigherPriorityTaskWoken);
     }
 
-//     I2C_DmaEnable(APB_I2C0, 1);
-//     I2C_CtrlUpdateDirection(APB_I2C0, I2C_TRANSACTION_MASTER2SLAVE);
-//     I2C_CtrlUpdateDataCnt(APB_I2C0, 14);
+    //     I2C_DmaEnable(APB_I2C0, 1);
+    //     I2C_CtrlUpdateDirection(APB_I2C0, I2C_TRANSACTION_MASTER2SLAVE);
+    //     I2C_CtrlUpdateDataCnt(APB_I2C0, 14);
 
-// #define I2C_DMA_RX_CHANNEL (0) // DMA channel 0
-//     peripherals_i2c_rxfifo_to_dma(I2C_DMA_RX_CHANNEL, read_data, sizeof(read_data));
+    // #define I2C_DMA_RX_CHANNEL (0) // DMA channel 0
+    //     peripherals_i2c_rxfifo_to_dma(I2C_DMA_RX_CHANNEL, read_data, sizeof(read_data));
 
-//     I2C_CommandWrite(APB_I2C0, I2C_COMMAND_ISSUE_DATA_TRANSACTION);
-//     sensor_is_send_seq = 1;
+    //     I2C_CommandWrite(APB_I2C0, I2C_COMMAND_ISSUE_DATA_TRANSACTION);
+    //     sensor_is_send_seq = 1;
 
     return 0;
 }
@@ -194,8 +195,9 @@ static void sensor_updata_task(void *param)
             {
                 imu_raw_data[i] = __REV16(imu_raw_data[i]);
             }
-            platform_printf("acc_x=%d,acc_y=%d,acc_z=%d,gyr_x=%d,gyr_y=%d,gyr_z=%d\r\n",
-                            imu_raw_data[0], imu_raw_data[1], imu_raw_data[2], imu_raw_data[3], imu_raw_data[4], imu_raw_data[5]);
+            algo_imu_data_update_event_handler(imu_raw_data, &imu_raw_data[3]);
+            // platform_printf("acc_x=%d,acc_y=%d,acc_z=%d,gyr_x=%d,gyr_y=%d,gyr_z=%d\r\n",
+            //                 imu_raw_data[0], imu_raw_data[1], imu_raw_data[2], imu_raw_data[3], imu_raw_data[4], imu_raw_data[5]);
         }
     }
 }

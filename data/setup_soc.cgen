@@ -49,8 +49,8 @@ GIO_WriteValue((GIO_Index_t)10, 1);
     APB_UART0->IntClear = 0;
     APB_UART0->IntMask = 0;
     APB_UART0->StatusClear = 0;
-    APB_UART0->IntBaudDivisor = 7;
-    APB_UART0->FractBaudDivisor = 38;
+    APB_UART0->IntBaudDivisor = 60;
+    APB_UART0->FractBaudDivisor = 49;
     APB_UART0->LineCon_H = ( ((UART_PARITY_NOT_CHECK >> 2) & 1) << bsUART_STICK_PARITY ) |  // SPS
                         (   3      << bsUART_WORD_LENGTH  ) |  // WLEN
                         (   1      << bsUART_FIFO_ENABLE  ) |  // FEN
@@ -93,11 +93,11 @@ APB_UART0->DmaCon = (0 << 0) | (0 << 1) | (0 << 2);
                      | (0 << bsUART_RECV_INT_LEVEL);
     APB_UART1->IntMask = ((uint32_t)1 << bsUART_RECEIVE_INTENAB)  |
                   ((uint32_t)0 << bsUART_TRANSMIT_INTENAB) |
-                  ((uint32_t)1 << bsUART_TIMEOUT_INTENAB)  |
-                  ((uint32_t)1 << bsUART_FRAME_INTENAB)    |
-                  ((uint32_t)1 << bsUART_PARITY_INTENAB)   |
-                  ((uint32_t)1 << bsUART_BREAK_INTENAB)    |
-                  ((uint32_t)1 << bsUART_OVERRUN_INTENAB);
+                  ((uint32_t)0 << bsUART_TIMEOUT_INTENAB)  |
+                  ((uint32_t)0 << bsUART_FRAME_INTENAB)    |
+                  ((uint32_t)0 << bsUART_PARITY_INTENAB)   |
+                  ((uint32_t)0 << bsUART_BREAK_INTENAB)    |
+                  ((uint32_t)0 << bsUART_OVERRUN_INTENAB);
     APB_UART1->Control = ((uint32_t)1 << bsUART_RECEIVE_ENABLE) |
                   ((uint32_t)0 << bsUART_TRANSMIT_ENABLE)|
                   ((uint32_t)1 << bsUART_ENABLE)         |
