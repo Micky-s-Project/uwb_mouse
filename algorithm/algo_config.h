@@ -9,7 +9,8 @@
 #define SENSOR_ACC_RANGE         16
 
 #define TAG_ROLE                 1
-#define G_CONST                  9.80665
+// #define G_CONST                  9.80665
+#define G_CONST                  10.2
 #define US_2_S                   1000000
 #define IMU_DATA_RATE            8000
 #define UWB_DATA_RATE            100

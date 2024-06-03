@@ -5,11 +5,24 @@
 #include "platform_api.h"
 #include "attitude_calculator.h"
 #include "position_calculator.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "task.h"
+#include "uwb.h"
+#include "mouse.h"
 /*
             时间戳
 */
+#define MOUSE_MOVE_RATE 200
+void algo_uwb_data_update_event_handler(void *p);
+void algorithm_init()
+{
+    xTaskCreate(algo_uwb_data_update_event_handler, "uwb task", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, NULL);
+    mouse_init();
+}
+void uwb_data_parse();
 typedef uint64_t Tick_t;
-Tick_t tick, last_imu_data_tick, last_uwb_data_tick;
+Tick_t tick, last_imu_data_tick, last_uwb_data_tick, last_mouse_tick;
 Tick_t get_tick()
 {
     return platform_get_us_time();
@@ -18,10 +31,19 @@ float tick_2_second(Tick_t tick)
 {
     return (float)tick / 1000000.0f;
 }
-
-/*
-            imu数据更新事件处理
-*/
+typedef struct UWB_DATA_t
+{
+    float x;
+    float y;
+    float dis;
+    float aoa;
+    uint8_t ready;
+} UWB_DATA_t;
+UWB_DATA_t uwb_data = {0};
+uint8_t uwb_data_pool[256] = {0};
+uint16_t uwb_data_pool_index = 0;
+int16_t no_index[2] = {-1, -1};
+int16_t uwb_data_run_count = 0;
 typedef struct IMU_DATA_t
 {
     int16_t gyro_data_raw[3];
@@ -30,18 +52,44 @@ typedef struct IMU_DATA_t
     float acc_data[3];
 } IMU_DATA_t;
 IMU_DATA_t imu_data;
+uint32_t imu_data_run_count = 0;
 void imu_data_parse(int16_t gyro_data_raw[3], int16_t acc_data_raw[3]);
 void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_data_raw[3])
 {
     tick = get_tick();
-    float t = tick_2_second(tick - last_imu_data_tick);
+    uwb_data_parse();
+    imu_data_run_count++;
+    if (imu_data_run_count == 1600)
+    {
+        imu_data_run_count = 0;
+        platform_printf("imu:%lld\n", tick);
+    }
 
     imu_data_parse(gyro_data_raw, acc_data_raw);
     gyro_data_zero_cali(imu_data.gyro_data, acc_data_raw);
-    attitude_calculate(t, 0);
-    position_calculate(t, 0);
-
+    if (uwb_data.ready == 0)
+    {
+        float t = tick_2_second(tick - last_imu_data_tick);
+        attitude_calculate(t, 0);
+        // position_calculate(t, 0);
+    }
+    else
+    {
+        float t = tick_2_second(tick - last_uwb_data_tick);
+        last_uwb_data_tick = tick;
+        attitude_calculate(t, 1);
+        // position_calculate(t, 1);
+        uwb_data.ready = 0;
+    }
     last_imu_data_tick = tick;
+
+    if(tick - last_mouse_tick > 1000000 / MOUSE_MOVE_RATE)
+    {
+        last_mouse_tick = tick;
+        float euler[3] = {0};
+        attitude_calculator_get_euler(euler);
+        mouse_cal_pix(euler[1], euler[2]);
+    }
 }
 
 void imu_data_parse(int16_t gyro_data_raw[3], int16_t acc_data_raw[3])
@@ -55,53 +103,77 @@ void imu_data_parse(int16_t gyro_data_raw[3], int16_t acc_data_raw[3])
     }
 }
 
-typedef struct UWB_DATA_t
+void algo_uwb_data_update_event_handler(void *p)
 {
-    float x;
-    float y;
-    float dis;
-    float aoa;
-} UWB_DATA_t;
-UWB_DATA_t uwb_data = {0};
-uint8_t uwb_data_pool[128] = {0};
-uint8_t uwb_data_pool_index = 0;
-void algo_uwb_data_update_event_handler(char data_char)
-{
-    platform_printf("%c",data_char);
-    return ;
-
-
-    uwb_data_pool[uwb_data_pool_index++] = data_char;
-    char *d1_index = strstr((char *)uwb_data_pool, "NO");
-    if (d1_index != NULL)
+    QueueHandle_t uwb_queue = 0;
+    char data_char;
+    //
+    // return;
+    while (uwb_queue == NULL)
     {
-        char *end_index = strstr((char *)(d1_index + 2), "NO");
-        if (end_index != NULL)
+        uwb_queue = get_uwb_queue();
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    while (1)
+    {
+        // vTaskDelay(pdMS_TO_TICKS(10));
+        if (xQueueReceive(uwb_queue, &data_char, 0xFFFFFFFF))
         {
-            int tmp = 0;
-            if (sscanf(d1_index, "NO(%d). D(m): %f, A: %f,%d, \n", &tmp, &(uwb_data.dis), &(uwb_data.aoa), &tmp) == 4)
+            // platform_printf("%c", data_char);
+            if (data_char == 'O' && uwb_data_pool[uwb_data_pool_index - 1] == 'N')
             {
-                memset((char *)uwb_data_pool, 0, 128);
-                uwb_data_pool[0] = 'N';
-                uwb_data_pool[1] = 'O';
-                uwb_data_pool_index = 2;
-
-                tick = get_tick();
-                float t = tick_2_second(tick - last_uwb_data_tick);
-
-                uwb_data.aoa *= 0.01745329;
-                uwb_data.x = uwb_data.dis * sinf(uwb_data.aoa);
-                uwb_data.y = uwb_data.dis * cosf(uwb_data.aoa);
-                ALGO_DEBUG("uwb_data:%f,%f,%f,%f\n", uwb_data.dis, uwb_data.aoa * 57.3, uwb_data.x, uwb_data.y);
-                last_uwb_data_tick = tick;
-                attitude_calculate(t, 1);
-                position_calculate(t, 1);
+                if (no_index[0] == -1)
+                {
+                    no_index[0] = 0;
+                }
+                else
+                {
+                    no_index[1] = uwb_data_pool_index;
+                }
+            }
+            uwb_data_pool[uwb_data_pool_index++] = data_char;
+            uwb_data_run_count++;
+            if (uwb_data_run_count == 1000)
+            {
+                uwb_data_run_count = 0;
+                // platform_printf("uwb:%lld\n", tick);
             }
         }
-        platform_printf("\nd1_index:%s\n\nend_index:%s\n\npool:%s\n\n", (char *)d1_index, (char *)end_index, (char *)uwb_data_pool);
+    }
+
+    //
+}
+void uwb_data_parse()
+{
+    if (no_index[0] != -1 && no_index[1] != -1)
+    {
+        float dis_tmp = 0, aoa_tmp = 0;
+        // platform_printf("uwb_data:%d,%d,%s\n", no_index[0], no_index[1], uwb_data_pool);
+        if (sscanf((char *)uwb_data_pool, "%*[^:]: %f%*[^:]: %f", &(dis_tmp), &(aoa_tmp)) == 2)
+        {
+            // platform_printf("uwb_data:%f,%f\n", dis_tmp, aoa_tmp);
+            if ((abs(dis_tmp - uwb_data.dis) < 0.5 && abs(0.01745329 * aoa_tmp - uwb_data.aoa) < 0.5 || uwb_data.dis == 0) && dis_tmp > 0)
+            {
+                uwb_data.dis = dis_tmp;
+                uwb_data.aoa = 0.01745329 * aoa_tmp;
+                uwb_data.x = uwb_data.dis * sinf(uwb_data.aoa);
+                uwb_data.y = uwb_data.dis * cosf(uwb_data.aoa);
+                uwb_data.ready = 1;
+                platform_printf("uwb_data:%f,%f,%f,%f\n", uwb_data.dis, uwb_data.aoa * 57.3, uwb_data.x, uwb_data.y);
+            }
+
+            //
+        }
+
+        memset(uwb_data_pool, 0, 256);
+        uwb_data_pool[0] = 'N';
+        uwb_data_pool[1] = 'O';
+        uwb_data_pool_index = 2;
+        no_index[0] = 0;
+        no_index[1] = -1;
     }
 }
-
 // void algo_uwb_data_update_event_handler(char *data_str)
 //{
 //     tick = get_tick();

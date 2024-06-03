@@ -9,10 +9,15 @@
 #define UWB_RX_PIN 4
 #define UWB_PWR_PIN 5
 
+QueueHandle_t uwb_queue;
 // #define RING_BUF_SIZE 256
 // char ring_buf[RING_BUF_SIZE];
 // char *ring_head_p;
 // uint16_t ring_seq = 0;
+QueueHandle_t get_uwb_queue()
+{
+    return uwb_queue;
+}
 uint32_t uart1_isr(void *user_data)
 {
     uint32_t status;
@@ -31,8 +36,11 @@ uint32_t uart1_isr(void *user_data)
             uint8_t c = UART_ReceData(APB_UART1);
             // ring_buf[ring_seq++] = uart_data;
             // ring_seq = ring_seq > RING_BUF_SIZE ? 0 : ring_seq;
-            // platform_printf("%c", uart_data);
-            algo_uwb_data_update_event_handler(c);
+            // platform_printf("%c", c);
+            // xQueueSend(uwb_queue, c, 0);
+            BaseType_t xHigherPriorityTaskWoken;
+            xHigherPriorityTaskWoken = 1;
+            xQueueSendFromISR(uwb_queue, &c, &xHigherPriorityTaskWoken);
         }
 
         if (status & (1 << bsUART_TIMEOUT_INTENAB))
@@ -57,6 +65,11 @@ uint32_t uart1_isr(void *user_data)
 
 void uwb_uart_init()
 {
+    uwb_queue = xQueueCreate(512, 1);
+    if(uwb_queue == 0)
+    {
+        platform_printf("uwb_queue create fail!!\n");
+    }
     apUART_Enable_RECEIVE_INT(APB_UART1);
     PINCTRL_SelUartRxdIn(UART_PORT_1, UWB_RX_PIN);
     PINCTRL_SelUartIn(1, 4, 127);

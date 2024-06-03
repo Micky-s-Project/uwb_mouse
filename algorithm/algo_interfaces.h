@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+void algorithm_init();
 void algo_get_gyro_data(float *pdata);
 void algo_get_acc_data(float *pdata);
 void algo_get_uwb_data_xy(float *pdata);

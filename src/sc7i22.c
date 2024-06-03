@@ -165,9 +165,12 @@ static void sensor_updata_task(void *param)
     uint8_t int_cfg1 = sensor_read_u8(0x06);
     sensor_write_u8(0x06, 0b00000011); //  INT_CFG1  AOI1| AOI2 中断在 INT1 上
     platform_printf("INT_CFG1 :0x%02x  updata to 0x%02x\r\n", int_cfg1, sensor_read_u8(0x06));
-    sensor_write_u8(0x40, 0b10001100); // ACC_CONF 1.6k
+    
     sensor_write_u8(0x41, 0x03);       // ACC_RANGE 16g
-
+    vTaskDelay(pdMS_TO_TICKS(10));
+    sensor_write_u8(0x41, 0x03);       // ACC_RANGE 16g
+    sensor_write_u8(0x40, 0b10001100); // ACC_CONF 1.6k
+    platform_printf("ACC_RANGE :0x%02x \n", sensor_read_u8(0x41));
     sensor_write_u8(0x42, 0b11001101); // GYR_CONF 3.2k
     sensor_write_u8(0x43, 0x08);       // GYR_RANGE 2000dps
 
@@ -195,7 +198,7 @@ static void sensor_updata_task(void *param)
             {
                 imu_raw_data[i] = __REV16(imu_raw_data[i]);
             }
-            algo_imu_data_update_event_handler(imu_raw_data, &imu_raw_data[3]);
+            algo_imu_data_update_event_handler(&imu_raw_data[3], imu_raw_data);
             // platform_printf("acc_x=%d,acc_y=%d,acc_z=%d,gyr_x=%d,gyr_y=%d,gyr_z=%d\r\n",
             //                 imu_raw_data[0], imu_raw_data[1], imu_raw_data[2], imu_raw_data[3], imu_raw_data[4], imu_raw_data[5]);
         }
@@ -213,5 +216,5 @@ void sc7122_init()
     //    GIO_ConfigIntSource(SENSOR_IRQ_PIN, GIO_INT_EN_LOGIC_HIGH_OR_RISING_EDGE, GIO_INT_EDGE);
     platform_set_irq_callback(PLATFORM_CB_IRQ_GPIO, gpio0_isr, NULL);
 
-    xTaskCreate(sensor_updata_task, "sensor updata", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, &sensor_task_handle);
+    xTaskCreate(sensor_updata_task, "sensor updata", 512 , NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, &sensor_task_handle);
 }

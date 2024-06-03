@@ -10,7 +10,7 @@
       <TargetName>Target 1</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6110000::V6.11::.\ARMCLANG</pCCUsed>
+      <pCCUsed>6140000::V6.14::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -186,7 +186,6 @@
             <RvdsVP>2</RvdsVP>
             <RvdsMve>0</RvdsMve>
             <RvdsCdeCp>0</RvdsCdeCp>
-            <nBranchProt>0</nBranchProt>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -340,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>sdk/bundles/typical/inc;sdk/bundles/typical/inc/os;sdk/src/BSP;sdk/src/FWlib;sdk/src/StartUP/ing916;sdk/src/Tools;sdk/src;.\algorithm</IncludePath>
+              <IncludePath>sdk/bundles/typical/inc;sdk/bundles/typical/inc/os;sdk/src/BSP;sdk/src/FWlib;sdk/src/StartUP/ing916;sdk/src/Tools;sdk/src;.\algorithm;.\src</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -575,14 +574,19 @@
               <FilePath>.\algorithm\position_calculator.c</FilePath>
             </File>
             <File>
-              <FileName>queue.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\algorithm\queue.c</FilePath>
-            </File>
-            <File>
               <FileName>attitude_calculator.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\algorithm\attitude_calculator.c</FilePath>
+            </File>
+            <File>
+              <FileName>my_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\algorithm\my_queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>mouse.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\algorithm\mouse.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -605,5 +609,20 @@
     </components>
     <files/>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>&lt;Project Info&gt;</LayName>
+        <LayDesc></LayDesc>
+        <LayUrl></LayUrl>
+        <LayKeys></LayKeys>
+        <LayCat></LayCat>
+        <LayLic></LayLic>
+        <LayTarg>0</LayTarg>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>

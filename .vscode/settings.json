@@ -33,5 +33,11 @@
     "**/.vscode",
     "**/.vscode/**"
   ],
-  "C_Cpp_Runner.useAddressSanitizer": false
+  "C_Cpp_Runner.useAddressSanitizer": false,
+  "files.associations": {
+    "algo_interfaces.h": "c",
+    "freertos.h": "c",
+    "math.h": "c",
+    "attitude_calculator.h": "c"
+  }
 }

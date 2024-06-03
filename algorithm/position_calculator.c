@@ -1,7 +1,7 @@
 #include "kalman.h"
 #include "my_math.h"
 #include "my_mat.h"
-#include "queue.h"
+#include "my_queue.h"
 #include "attitude_calculator.h"
 #include <math.h>
 #include "algo_interfaces.h"
@@ -38,12 +38,12 @@ void position_calculate(float t, uint8_t uwb_ready)
         {
             float P0[4] = {1, 0, 0, 1};
             float Q[4] = {0.01, 0, 0, 0.01};
-            float R[4] = {10, 0, 0, 0.1};
+            float R[4] = {1, 0, 0, 0.1};
             float x_x0[2] = {x[0], 0};
             float y_x0[2] = {x[1], 0};
             kalman2_init(&x_pos_kalman, x_x0, P0, Q, R);
             kalman2_init(&y_pos_kalman, y_x0, P0, Q, R);
-            ALGO_DEBUG("\nposition init!\n\n");
+            platform_printf("\nposition init!\n\n");
         }
     }
     else
@@ -52,7 +52,7 @@ void position_calculate(float t, uint8_t uwb_ready)
         float tt2 = t * t * 0.5f;
 
         static float a[3] = {0};
-        attitude_calculator_get_a(x);
+        attitude_calculator_get_a(a);
 
         float z_k_x[2] = {x[0], v[0]}, z_k_y[2] = {x[1], v[1]};
         float u_k_x[2] = {a[0] * tt2, a[0] * t},
@@ -63,8 +63,8 @@ void position_calculate(float t, uint8_t uwb_ready)
         {
             cal_v_by_uwb(x, v, t);
             z_k_x[0] = qx.mean;
-            z_k_y[1] = qy.mean;
-            float R_t[4] = {10, 0, 0, 0.001};
+            z_k_y[0] = qy.mean;
+            float R_t[4] = {1, 0, 0, 0.001};
             R_t[3] = fabsf(v[0]);
             copy_f32(x_pos_kalman.R_INIT, R_t, 4);
             R_t[3] = fabsf(v[1]);
@@ -73,7 +73,7 @@ void position_calculate(float t, uint8_t uwb_ready)
             kalman2_next(&y_pos_kalman, F_k_k_1, z_k_y, u_k_y, 0);
             position[0] = x_pos_kalman.x_k_1.pData[0];
             position[1] = y_pos_kalman.x_k_1.pData[0];
-            platform_printf("x:%f,y:%f\n", position[0], position[1]);
+            platform_printf("x:%f,y:%f,x:%f,y:%f\n", position[0], position[1],z_k_x[0],z_k_y[0]);
         }
         else
         {

@@ -25,16 +25,23 @@ void attitude_calculator_get_a(float *pDst)
     pDst[2] = a[2];
 }
 
+void attitude_calculator_get_euler(float *pDst)
+{
+    pDst[0] = euler[0];
+    pDst[1] = euler[1];
+    pDst[2] = euler[2];
+}
+
 void attitude_calculate(float t, uint8_t uwb_data_ready)
 {
     float w[3] = {0};
     float f[3] = {0};
     algo_get_gyro_data(w);
     algo_get_acc_data(f);
-    if (uwb_data_ready == 0)
+    if (uwb_data_ready == 1)
     {
-        ALGO_DEBUG("w:%f,%f,%f\n", w[0], w[1], w[2]);
-        ALGO_DEBUG("f:%f,%f,%f\n", f[0], f[1], f[2]);
+        //platform_printf("w:%f,%f,%f\n", w[0], w[1], w[2]);
+        //platform_printf("f:%f,%f,%f\n", f[0], f[1], f[2]);
     }
 
     if (g_n_b_kalman.init == 0 || m_n_b_kalman.init == 0) {
@@ -43,7 +50,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
         float R[9] = {10000, 0, 0, 0, 10000, 0, 0, 0, 10000};
         float g_x0[3] = {f[0], f[1], f[2]};
         float m_x0[3] = {0,1,0};
-        if (uwb_data_ready) {
+        if (uwb_data_ready && (f[0] != 0 || f[1] != 0 || f[2] != 0)) {
             cal_cbn(g_x0, m_x0, cbn);
             ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
             ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
@@ -57,14 +64,13 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
 
             kalman3_init(&g_n_b_kalman, g_x0, P0, Q, R);
             kalman3_init(&m_n_b_kalman, m_x0, P0, Q, R);
-            ALGO_DEBUG("\nattitude init!\n\n");
+            platform_printf("\nattitude init!\n\n");
 
             cal_cbn(g_n_b_kalman.x_k_1.pData, m_n_b_kalman.x_k_1.pData, cbn);
             ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
             ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
             ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[6], cbn[7], cbn[8]);
             cal_euler(cbn);
-            ALGO_DEBUG("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
         }
     }
     else
@@ -77,7 +83,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             float aoa = 0;
             algo_get_uwb_data_aoa(&aoa);
             cal_ynb(ynb, aoa);
-            ALGO_DEBUG("ynb:%f,%f,%f\n", ynb[0], ynb[1], ynb[2]);
+            //ALGO_DEBUG("ynb:%f,%f,%f\n", ynb[0], ynb[1], ynb[2]);
         }
         float so3[9] = {0};
         cal_so3(w, t, so3);
@@ -87,12 +93,17 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
 
         cal_cbn(g_n_b_kalman.x_k_1.pData, m_n_b_kalman.x_k_1.pData, cbn);
         cal_aln(cbn, f, a);
-        ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
-        ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
-        ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[6], cbn[7], cbn[8]);
-        ALGO_DEBUG("a:%f,%f,%f\n", a[0], a[1], a[2]);
+        //ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
+        //ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
+        //ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[6], cbn[7], cbn[8]);
+        //ALGO_DEBUG("a:%f,%f,%f\n", a[0], a[1], a[2]);
         cal_euler(cbn);
-        ALGO_DEBUG("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
+        if (uwb_data_ready == 1)
+        {
+            // platform_printf("a:%f,%f,%f\n", a[0], a[1], a[2]);
+            // platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
+        }
+
     }
 }
 
@@ -201,7 +212,7 @@ void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
             gyro_bias_sum[0] = 0;
             gyro_bias_sum[1] = 0;
             gyro_bias_sum[2] = 0;
-        } else if (++acc_static_count == 16) {
+        } else if (++acc_static_count == 8) {
             acc_static_count = 0;
 
             int16_t ans[3];
@@ -213,10 +224,10 @@ void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
                 gyro_bias_sum[0] += gyro_data[0];
                 gyro_bias_sum[1] += gyro_data[1];
                 gyro_bias_sum[2] += gyro_data[2];
-                if (++gyro_bias_count == 100) {
-                    gyro_bias[0] = gyro_bias_sum[0] / 100;
-                    gyro_bias[1] = gyro_bias_sum[1] / 100;
-                    gyro_bias[2] = gyro_bias_sum[2] / 100;
+                if (++gyro_bias_count == 25) {
+                    gyro_bias[0] = gyro_bias_sum[0] / 25;
+                    gyro_bias[1] = gyro_bias_sum[1] / 25;
+                    gyro_bias[2] = gyro_bias_sum[2] / 25;
                     freeze_count = 40000;
                     start_if = 0;
                 }
