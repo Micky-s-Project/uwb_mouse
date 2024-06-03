@@ -40,17 +40,19 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
     algo_get_acc_data(f);
     if (uwb_data_ready == 1)
     {
-        //platform_printf("w:%f,%f,%f\n", w[0], w[1], w[2]);
-        //platform_printf("f:%f,%f,%f\n", f[0], f[1], f[2]);
+        // platform_printf("w:%f,%f,%f\n", w[0], w[1], w[2]);
+        // platform_printf("f:%f,%f,%f\n", f[0], f[1], f[2]);
     }
 
-    if (g_n_b_kalman.init == 0 || m_n_b_kalman.init == 0) {
+    if (g_n_b_kalman.init == 0 || m_n_b_kalman.init == 0)
+    {
         float P0[9] = {3.161519, 0, 0, 0, 3.161519, 0, 0, 0, 3.161519};
         float Q[9] = {0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001};
         float R[9] = {10000, 0, 0, 0, 10000, 0, 0, 0, 10000};
         float g_x0[3] = {f[0], f[1], f[2]};
-        float m_x0[3] = {0,1,0};
-        if (uwb_data_ready && (f[0] != 0 || f[1] != 0 || f[2] != 0)) {
+        float m_x0[3] = {0, 1, 0};
+        if (uwb_data_ready && (f[0] != 0 || f[1] != 0 || f[2] != 0))
+        {
             cal_cbn(g_x0, m_x0, cbn);
             ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
             ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
@@ -83,7 +85,15 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             float aoa = 0;
             algo_get_uwb_data_aoa(&aoa);
             cal_ynb(ynb, aoa);
-            //ALGO_DEBUG("ynb:%f,%f,%f\n", ynb[0], ynb[1], ynb[2]);
+
+            float weight = abs(sqrt_carmack(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]) - G_CONST) * 25000;
+            float R_t[9] = {10000, 0, 0, 0, 10000, 0, 0, 0, 10000};
+            R_t[0] = weight;
+            R_t[4] = weight;
+            R_t[8] = weight;
+            copy_f32(g_n_b_kalman.R_INIT, R_t, 9);
+            // copy_f32(m_n_b_kalman.R_INIT, R_t, 9);
+            // ALGO_DEBUG("ynb:%f,%f,%f\n", ynb[0], ynb[1], ynb[2]);
         }
         float so3[9] = {0};
         cal_so3(w, t, so3);
@@ -93,17 +103,16 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
 
         cal_cbn(g_n_b_kalman.x_k_1.pData, m_n_b_kalman.x_k_1.pData, cbn);
         cal_aln(cbn, f, a);
-        //ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
-        //ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
-        //ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[6], cbn[7], cbn[8]);
-        //ALGO_DEBUG("a:%f,%f,%f\n", a[0], a[1], a[2]);
+        // ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
+        // ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
+        // ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[6], cbn[7], cbn[8]);
+        // ALGO_DEBUG("a:%f,%f,%f\n", a[0], a[1], a[2]);
         cal_euler(cbn);
         if (uwb_data_ready == 1)
         {
             // platform_printf("a:%f,%f,%f\n", a[0], a[1], a[2]);
-            // platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
+            platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
         }
-
     }
 }
 
@@ -156,13 +165,18 @@ void cal_so3(float w[3], float t, float result[9])
     float theta = sqrt_carmack(theta_square);
     double kA;
     double kB;
-    if (theta_square < 1.0E-8) {
+    if (theta_square < 1.0E-8)
+    {
         kA = 1.0 - 0.1666666716337204 * theta_square;
         kB = 0.5;
-    } else if (theta_square < 1.0E-6) {
+    }
+    else if (theta_square < 1.0E-6)
+    {
         kB = 0.5 - 0.0416666679084301 * theta_square;
         kA = 1.0 - theta_square * 0.1666666716337204 * (1.0 - 0.1666666716337204 * theta_square);
-    } else {
+    }
+    else
+    {
         float invTheta = 1.0 / theta;
         kA = sinf(theta) * invTheta;
         kB = (1.0 - cosf(theta)) * (invTheta * invTheta);
@@ -197,13 +211,15 @@ void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
 
     if (freeze_count > 0)
         freeze_count--;
-    if (cali_if == 0 && freeze_count == 0) {
+    if (cali_if == 0 && freeze_count == 0)
+    {
         static uint16_t acc_static_count = 0;
         static int16_t acc_static_first[3];
 
         static float gyro_bias_sum[3] = {0};
         static uint16_t gyro_bias_count = 0;
-        if (start_if == 0) {
+        if (start_if == 0)
+        {
             acc_static_first[0] = acc_data_raw[0];
             acc_static_first[1] = acc_data_raw[1];
             acc_static_first[2] = acc_data_raw[2];
@@ -212,7 +228,9 @@ void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
             gyro_bias_sum[0] = 0;
             gyro_bias_sum[1] = 0;
             gyro_bias_sum[2] = 0;
-        } else if (++acc_static_count == 8) {
+        }
+        else if (++acc_static_count == 8)
+        {
             acc_static_count = 0;
 
             int16_t ans[3];
@@ -220,18 +238,22 @@ void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
             ans[1] = abs(acc_static_first[1] - acc_data_raw[1]);
             ans[2] = abs(acc_static_first[2] - acc_data_raw[2]);
 
-            if (ans[0] < 20 && ans[1] < 20 && ans[2] < 20) {
+            if (ans[0] < 20 && ans[1] < 20 && ans[2] < 20)
+            {
                 gyro_bias_sum[0] += gyro_data[0];
                 gyro_bias_sum[1] += gyro_data[1];
                 gyro_bias_sum[2] += gyro_data[2];
-                if (++gyro_bias_count == 25) {
+                if (++gyro_bias_count == 25)
+                {
                     gyro_bias[0] = gyro_bias_sum[0] / 25;
                     gyro_bias[1] = gyro_bias_sum[1] / 25;
                     gyro_bias[2] = gyro_bias_sum[2] / 25;
                     freeze_count = 40000;
                     start_if = 0;
                 }
-            } else {
+            }
+            else
+            {
                 start_if = 0;
             }
         }
