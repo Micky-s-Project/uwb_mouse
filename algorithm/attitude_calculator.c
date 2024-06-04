@@ -38,9 +38,9 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
     float f[3] = {0};
     algo_get_gyro_data(w);
     algo_get_acc_data(f);
-    if (uwb_data_ready == 1)
+    if (fabsf(w[0]) > 3 || fabsf(w[1]) > 3 || fabsf(w[2]) > 3)
     {
-        // platform_printf("w:%f,%f,%f\n", w[0], w[1], w[2]);
+        platform_printf("w:%f,%f,%f\n", w[0], w[1], w[2]);
         // platform_printf("f:%f,%f,%f\n", f[0], f[1], f[2]);
     }
 
@@ -79,14 +79,13 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
     {
         uint8_t only_predict = 1;
         float ynb[3] = {0};
-        if (uwb_data_ready == 1)
+        if (0 && uwb_data_ready == 1)
         {
             only_predict = 0;
             float aoa = 0;
             algo_get_uwb_data_aoa(&aoa);
             cal_ynb(ynb, aoa);
 
-            
             float tmp = fabsf(sqrt_carmack(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]) - G_CONST);
             float weight = tmp * tmp * 1000.f;
             float R_t[9] = {10000, 0, 0, 0, 10000, 0, 0, 0, 10000};
@@ -98,15 +97,22 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             R_t[0] = weight;
             R_t[4] = weight;
             R_t[8] = weight;
-            copy_f32(m_n_b_kalman.R_INIT, R_t, 9);
+            // copy_f32(m_n_b_kalman.R_INIT, R_t, 9);
             // ALGO_DEBUG("ynb:%f,%f,%f\n", ynb[0], ynb[1], ynb[2]);
         }
         float so3[9] = {0};
         cal_so3(w, t, so3);
-
+        float oldg[3] = {g_n_b_kalman.x_k_1_INIT[0], g_n_b_kalman.x_k_1_INIT[1], g_n_b_kalman.x_k_1_INIT[2]};
         kalman3_next(&g_n_b_kalman, so3, f, only_predict);
         kalman3_next(&m_n_b_kalman, so3, ynb, only_predict);
-
+        if (abs(g_n_b_kalman.x_k_1_INIT[0] - oldg[0]) > 0.05 || abs(g_n_b_kalman.x_k_1_INIT[1] - oldg[1]) > 0.05 || abs(g_n_b_kalman.x_k_1_INIT[2] - oldg[2]) > 0.05)
+        {
+            platform_printf("og:%f,%f,%f\n", oldg[0], oldg[1], oldg[2]);
+            platform_printf("cbn:%f,%f,%f\n", so3[0], so3[1], so3[2]);
+            platform_printf("cbn:%f,%f,%f\n", so3[3], so3[4], so3[5]);
+            platform_printf("cbn:%f,%f,%f\n", so3[6], so3[7], so3[8]);
+            platform_printf("g:%f,%f,%f\n", g_n_b_kalman.x_k_1.pData[0], g_n_b_kalman.x_k_1.pData[1], g_n_b_kalman.x_k_1.pData[2]);
+        }
         cal_cbn(g_n_b_kalman.x_k_1.pData, m_n_b_kalman.x_k_1.pData, cbn);
         cal_aln(cbn, f, a);
         // ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);

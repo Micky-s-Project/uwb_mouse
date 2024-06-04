@@ -49,8 +49,8 @@ GIO_WriteValue((GIO_Index_t)10, 1);
     APB_UART0->IntClear = 0;
     APB_UART0->IntMask = 0;
     APB_UART0->StatusClear = 0;
-    APB_UART0->IntBaudDivisor = 60;
-    APB_UART0->FractBaudDivisor = 49;
+    APB_UART0->IntBaudDivisor = 7;
+    APB_UART0->FractBaudDivisor = 38;
     APB_UART0->LineCon_H = ( ((UART_PARITY_NOT_CHECK >> 2) & 1) << bsUART_STICK_PARITY ) |  // SPS
                         (   3      << bsUART_WORD_LENGTH  ) |  // WLEN
                         (   1      << bsUART_FIFO_ENABLE  ) |  // FEN

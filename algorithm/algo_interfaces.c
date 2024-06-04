@@ -10,15 +10,24 @@
 #include "task.h"
 #include "uwb.h"
 #include "mouse.h"
+#include "sc7i22.h"
 /*
             时间戳
 */
-#define MOUSE_MOVE_RATE 10
+#define MOUSE_MOVE_RATE 50
+
+SemaphoreHandle_t imu_data_mutex = NULL;
+
 void algo_uwb_data_update_event_handler(void *p);
 void algorithm_init()
 {
     xTaskCreate(algo_uwb_data_update_event_handler, "uwb task", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, NULL);
     mouse_init();
+    while (imu_data_mutex == NULL)
+    {
+        imu_data_mutex = get_imu_data_mutex();
+        vTaskDelay(1);
+    }
 }
 void uwb_data_parse();
 typedef uint64_t Tick_t;
@@ -64,9 +73,12 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
         imu_data_run_count = 0;
         // platform_printf("imu:%lld\n", tick);
     }
-
-    imu_data_parse(gyro_data_raw, acc_data_raw);
-    gyro_data_zero_cali(imu_data.gyro_data, acc_data_raw);
+    if (xSemaphoreTake(imu_data_mutex, 0) == pdTRUE)
+    {
+        imu_data_parse(gyro_data_raw, acc_data_raw);
+        gyro_data_zero_cali(imu_data.gyro_data, acc_data_raw);
+        xSemaphoreGive(imu_data_mutex);
+    }
     if (uwb_data.ready == 0)
     {
         float t = tick_2_second(tick - last_imu_data_tick);
@@ -81,17 +93,17 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
         // position_calculate(t, 1);
         uwb_data.ready = 0;
     }
-    last_imu_data_tick = tick;
 
-    if(tick - last_mouse_tick > 1000000 / MOUSE_MOVE_RATE)
+    if (tick - last_mouse_tick > 1000000 / MOUSE_MOVE_RATE)
     {
         last_mouse_tick = tick;
         float euler[3] = {0};
         attitude_calculator_get_euler(euler);
-        mouse_cal_pix(euler[1], euler[2]);
-        // platform_printf("w:%f,%f,%f\n", imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2]);
-        // platform_printf("e:%f,%f,%f\n", euler[0], euler[1], euler[2]);
+        mouse_cal_pix(euler[0], euler[2]);
+        platform_printf("w:%f,%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2]);
+        // platform_printf("e:%f,%f,%f\n", euler[0] *57.3, euler[1]*57.3, euler[2]*57.3);
     }
+    last_imu_data_tick = tick;
 }
 
 void imu_data_parse(int16_t gyro_data_raw[3], int16_t acc_data_raw[3])
@@ -109,7 +121,7 @@ void algo_uwb_data_update_event_handler(void *p)
 {
     QueueHandle_t uwb_queue = 0;
     char data_char;
-    
+
     // return;
     while (uwb_queue == NULL)
     {
@@ -135,7 +147,7 @@ void algo_uwb_data_update_event_handler(void *p)
                 }
             }
             uwb_data_pool[uwb_data_pool_index++] = data_char;
-            if(uwb_data_pool_index == 256)
+            if (uwb_data_pool_index == 256)
             {
                 memset(uwb_data_pool, 0, 256);
                 uwb_data_pool_index = 0;

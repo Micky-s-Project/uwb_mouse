@@ -10,6 +10,7 @@
 #include "sc7i22.h"
 #include "uwb.h"
 #include "../data/setup_soc.cgen"
+#include "bsp_usb_hid.h"
 
 static uint32_t cb_hard_fault(hard_fault_info_t *info, void *_)
 {
@@ -203,7 +204,8 @@ int app_main()
 
     setup_peripherals();
     cube_setup_peripherals();
-
+		
+		bsp_usb_init();
     sc7122_init();
     uwb_uart_init();
     algorithm_init();
