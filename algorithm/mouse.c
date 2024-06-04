@@ -38,5 +38,5 @@ void mouse_cal_pix(float pitch, float yaw)
     int16_t dx = pix_x - last_pix_x, dy = pix_y - last_pix_y;
     last_pix_x = pix_x;
     last_pix_y = pix_y;
-    platform_printf("mouse:%d,%d,%d,%d\n", dx, dy, pix_x, pix_y);
+    platform_printf("mouse:%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3,dx, dy, pix_x, pix_y);
 }

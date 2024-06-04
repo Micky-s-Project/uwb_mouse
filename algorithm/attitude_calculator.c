@@ -5,7 +5,7 @@
 #include "my_mat.h"
 #include <math.h>
 #include <stdlib.h>
-
+#include "my_queue.h"
 float cbn[9] = {0};
 float euler[3] = {0};
 float a[3] = {0};
@@ -62,7 +62,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             float aoa = 0;
             algo_get_uwb_data_aoa(&aoa);
             cal_ynb(m_x0, aoa);
-            ALGO_DEBUG("ynb:%f,%f,%f\n", m_x0[0], m_x0[1], m_x0[2]);
+            platform_printf("ynb:%f,%f,%f\n", m_x0[0], m_x0[1], m_x0[2]);
 
             kalman3_init(&g_n_b_kalman, g_x0, P0, Q, R);
             kalman3_init(&m_n_b_kalman, m_x0, P0, Q, R);
@@ -86,13 +86,19 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             algo_get_uwb_data_aoa(&aoa);
             cal_ynb(ynb, aoa);
 
-            float weight = abs(sqrt_carmack(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]) - G_CONST) * 25000;
+            
+            float tmp = fabsf(sqrt_carmack(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]) - G_CONST);
+            float weight = tmp * tmp * 1000.f;
             float R_t[9] = {10000, 0, 0, 0, 10000, 0, 0, 0, 10000};
             R_t[0] = weight;
             R_t[4] = weight;
             R_t[8] = weight;
             copy_f32(g_n_b_kalman.R_INIT, R_t, 9);
-            // copy_f32(m_n_b_kalman.R_INIT, R_t, 9);
+            weight = tmp * 10000.0f;
+            R_t[0] = weight;
+            R_t[4] = weight;
+            R_t[8] = weight;
+            copy_f32(m_n_b_kalman.R_INIT, R_t, 9);
             // ALGO_DEBUG("ynb:%f,%f,%f\n", ynb[0], ynb[1], ynb[2]);
         }
         float so3[9] = {0};
@@ -111,7 +117,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
         if (uwb_data_ready == 1)
         {
             // platform_printf("a:%f,%f,%f\n", a[0], a[1], a[2]);
-            platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
+            // platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
         }
     }
 }
@@ -211,7 +217,7 @@ void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
 
     if (freeze_count > 0)
         freeze_count--;
-    if (cali_if == 0 && freeze_count == 0)
+    if (freeze_count == 0)
     {
         static uint16_t acc_static_count = 0;
         static int16_t acc_static_first[3];
@@ -266,11 +272,15 @@ void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
 
 void cal_ynb(float pdata[3], float yaw)
 {
+    static float yaw_mean_filt_data[25] = {0};
+    static Queue yaw_mean_filter;
+    queue_init(&yaw_mean_filter, yaw_mean_filt_data, 25, QUENE_ANALYZE_OPEN);
+    queue_input(&yaw_mean_filter, yaw);
     float ca, cb, cy, sa, sb, sy;
-    ca = cosf(yaw);
+    ca = cosf(yaw_mean_filter.mean);
     cb = cosf(euler[1]);
     cy = cosf(euler[0]);
-    sa = sinf(yaw);
+    sa = sinf(yaw_mean_filter.mean);
     sb = sinf(euler[1]);
     sy = sinf(euler[0]);
     pdata[0] = ca * sb * sy + sa * cy;

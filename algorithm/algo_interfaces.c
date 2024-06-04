@@ -13,7 +13,7 @@
 /*
             时间戳
 */
-#define MOUSE_MOVE_RATE 200
+#define MOUSE_MOVE_RATE 10
 void algo_uwb_data_update_event_handler(void *p);
 void algorithm_init()
 {
@@ -62,7 +62,7 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
     if (imu_data_run_count == 1600)
     {
         imu_data_run_count = 0;
-        platform_printf("imu:%lld\n", tick);
+        // platform_printf("imu:%lld\n", tick);
     }
 
     imu_data_parse(gyro_data_raw, acc_data_raw);
@@ -89,6 +89,8 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
         float euler[3] = {0};
         attitude_calculator_get_euler(euler);
         mouse_cal_pix(euler[1], euler[2]);
+        // platform_printf("w:%f,%f,%f\n", imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2]);
+        // platform_printf("e:%f,%f,%f\n", euler[0], euler[1], euler[2]);
     }
 }
 
@@ -102,12 +104,12 @@ void imu_data_parse(int16_t gyro_data_raw[3], int16_t acc_data_raw[3])
         imu_data.acc_data[i] = (float)acc_data_raw[i] * ACC_DATA_SCALE;
     }
 }
-
+uint32_t uwb_tmp_count = 0;
 void algo_uwb_data_update_event_handler(void *p)
 {
     QueueHandle_t uwb_queue = 0;
     char data_char;
-    //
+    
     // return;
     while (uwb_queue == NULL)
     {
@@ -133,6 +135,11 @@ void algo_uwb_data_update_event_handler(void *p)
                 }
             }
             uwb_data_pool[uwb_data_pool_index++] = data_char;
+            if(uwb_data_pool_index == 256)
+            {
+                memset(uwb_data_pool, 0, 256);
+                uwb_data_pool_index = 0;
+            }
             uwb_data_run_count++;
             if (uwb_data_run_count == 1000)
             {
@@ -160,7 +167,7 @@ void uwb_data_parse()
                 uwb_data.x = uwb_data.dis * sinf(uwb_data.aoa);
                 uwb_data.y = uwb_data.dis * cosf(uwb_data.aoa);
                 uwb_data.ready = 1;
-                platform_printf("uwb_data:%f,%f,%f,%f\n", uwb_data.dis, uwb_data.aoa * 57.3, uwb_data.x, uwb_data.y);
+                // platform_printf("uwb_data:%f,%f,%f,%f\n", uwb_data.dis, uwb_data.aoa * 57.3, uwb_data.x, uwb_data.y);
             }
 
             //
