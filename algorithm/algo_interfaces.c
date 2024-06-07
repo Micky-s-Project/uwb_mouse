@@ -100,7 +100,7 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
         float euler[3] = {0};
         attitude_calculator_get_euler(euler);
         mouse_cal_pix(euler[0], euler[2]);
-        platform_printf("w:%f,%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2]);
+        // platform_printf("w:%f,%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2]);
         // platform_printf("e:%f,%f,%f\n", euler[0] *57.3, euler[1]*57.3, euler[2]*57.3);
     }
     last_imu_data_tick = tick;

@@ -189,6 +189,36 @@ uint32_t query_deep_sleep_allowed(void *dummy, void *user_data)
     return 0;
 }
 
+uint8_t ready_output_xy = 0;
+void btn_task(void *p)
+{
+    PINCTRL_SetPadMux(15, IO_SOURCE_GPIO);
+    PINCTRL_Pull(15, PINCTRL_PULL_UP);
+    GIO_SetDirection((GIO_Index_t)15, (GIO_Direction_t)0);
+    uint8_t btn_state;
+    uint8_t last_btn_state;
+    uint8_t down_count = 0;
+    while (1)
+    {
+        vTaskDelay(10);
+        btn_state = GIO_ReadValue(15);
+        if (last_btn_state != btn_state)
+        {
+            last_btn_state = btn_state;
+            if (!btn_state)
+            {
+                mouse_control_init();
+                platform_printf("btn down\n");
+                down_count++;
+                if (down_count >= 2)
+                {
+                    ready_output_xy = 1;
+                }
+            }
+        }
+    }
+}
+
 int app_main()
 {
     //    platform_set_evt_callback(PLATFORM_CB_EVT_PROFILE_INIT, setup_profile, NULL);
@@ -204,10 +234,11 @@ int app_main()
 
     setup_peripherals();
     cube_setup_peripherals();
-		
-		bsp_usb_init();
+
+    bsp_usb_init();
     sc7122_init();
     uwb_uart_init();
     algorithm_init();
+    xTaskCreate(btn_task, "btn_task", 128, NULL, 2, NULL);
     return 0;
 }
