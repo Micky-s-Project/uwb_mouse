@@ -14,7 +14,7 @@
 
 #define I2C_PORT I2C_PORT_0
 #define I2C_BASE(port) ((port) == I2C_PORT_0 ? APB_I2C0 : APB_I2C1)
-#define SC7I22_I2C_ADDR 0x19
+#define SC7I22_I2C_ADDR 0x69
 
 int16_t *imu_raw_data;
 uint8_t sensor_data[12];
@@ -139,9 +139,9 @@ static void sensor_write_u8(uint8_t reg, uint8_t data)
 static void sensor_updata_task(void *param)
 {
 
-    //    PINCTRL_SelI2cIn(I2C_PORT, IIC_SCL_PIN, IIC_SDA_PIN);
-    //    I2C_Config(APB_I2C0, I2C_ROLE_MASTER, I2C_ADDRESSING_MODE_07BIT, SC7I22_I2C_ADDR);
-    //    I2C_ConfigClkFrequency(APB_I2C0, I2C_CLOCKFREQUENY_STANDARD);
+    PINCTRL_SelI2cIn(I2C_PORT, IIC_SCL_PIN, IIC_SDA_PIN);
+    I2C_Config(APB_I2C0, I2C_ROLE_MASTER, I2C_ADDRESSING_MODE_07BIT, SC7I22_I2C_ADDR);
+    I2C_ConfigClkFrequency(APB_I2C0, I2C_CLOCKFREQUENY_FASTMODE_PLUS);
     // I2C0
     PINCTRL_SelI2cIn(0, 7, 8);
     PINCTRL_SetPadMux(7, 106);
@@ -151,50 +151,65 @@ static void sensor_updata_task(void *param)
     // I2C_IntEnable(APB_I2C0, (1 << I2C_INT_CMPL));
     I2C_Enable(APB_I2C0, 1);
     i2c_init(I2C_PORT);
+    uint8_t who_am_i = 0;
 
-    uint8_t who_am_i = sensor_read_u8(0x01);
+    who_am_i = sensor_read_u8(0x75);
     platform_printf("who_am_i reg : 0x%02x\r\n", who_am_i);
     if (who_am_i != 0x6a)
     {
         platform_printf("sc7i22 not found!!!\r\n");
         // return;
     }
-
-    sensor_write_u8(0x4A, 0xA5); // SOFT_RST
-    vTaskDelay(pdMS_TO_TICKS(10));
-    // uint8_t com_cfg = sensor_read_u8(0x05);
-    // sensor_write_u8(0x05, com_cfg | 0x80);
 soft_res:
-    sensor_write_u8(0x04, 0x10); // OIS_CONF
-    uint8_t int_cfg1 = sensor_read_u8(0x06);
-    sensor_write_u8(0x06, 0b00000011); //  INT_CFG1  AOI1| AOI2 中断在 INT1 上
-    platform_printf("INT_CFG1 :0x%02x  updata to 0x%02x\r\n", int_cfg1, sensor_read_u8(0x06));
 
-    sensor_write_u8(0x41, 0x03); // ACC_RANGE 16g
+    // sensor_write_u8(0x4A, 0xA5); // SOFT_RST
+    // // uint8_t com_cfg = sensor_read_u8(0x05);
+    // // sensor_write_u8(0x05, com_cfg | 0x80);
+    // sensor_write_u8(0x04, 0x10); // OIS_CONF
+    // uint8_t int_cfg1 = sensor_read_u8(0x06);
+    // sensor_write_u8(0x06, 0b00000011); //  INT_CFG1  AOI1| AOI2 中断在 INT1 上
+    // platform_printf("INT_CFG1 :0x%02x  updata to 0x%02x\r\n", int_cfg1, sensor_read_u8(0x06));
+    // sensor_write_u8(0x41, 0x03); // ACC_RANGE 16g
+    // vTaskDelay(pdMS_TO_TICKS(10));
+    // sensor_write_u8(0x41, 0x03);       // ACC_RANGE 16g
+    // sensor_write_u8(0x40, 0b10001100); // ACC_CONF 1.6k
+    // sensor_write_u8(0x42, 0b11001101); // GYR_CONF 3.2k
+    // sensor_write_u8(0x43, 0x08);       // GYR_RANGE 2000dps
+    // sensor_write_u8(0x7D, 0x0e); /* PWR_CTRL */
+
+    // Init for ICM24688
+    sensor_write_u8(0x76, 0x00);
+    sensor_write_u8(0x11, 0x01);
     vTaskDelay(pdMS_TO_TICKS(10));
-    sensor_write_u8(0x41, 0x03);       // ACC_RANGE 16g
-    sensor_write_u8(0x40, 0b10001100); // ACC_CONF 1.6k
+    sensor_write_u8(0x76, 0x01);
+    sensor_write_u8(0x7A, 0x02);
 
-    sensor_write_u8(0x42, 0b11001101); // GYR_CONF 3.2k
-    sensor_write_u8(0x43, 0x08);       // GYR_RANGE 2000dps
+    sensor_write_u8(0x76, 0x00);
+    //    sensor_write_u8(0x16, 0x40);
+    sensor_write_u8(0x14, 0x03);
+    sensor_write_u8(0x65, 0x7f);
+    sensor_write_u8(0x63, 0x20);
+    sensor_write_u8(0x64, 0x60);
+    sensor_write_u8(0x4C, 0x20);//little endian
+    // sensor_write_u8(0x14, 0x00);
+    sensor_write_u8(0x4E, 0x0F);
 
-    sensor_write_u8(0x7D, 0x0e); /* PWR_CTRL */
-    vTaskDelay(pdMS_TO_TICKS(10));
-    uint8_t acc_range = sensor_read_u8(0x41);
-    uint8_t gyr_range = sensor_read_u8(0x43);
-    uint8_t acc_odr = sensor_read_u8(0x40);
-    uint8_t gyr_odr = sensor_read_u8(0x42);
+    sensor_write_u8(0x4F, 0x03); // gyro
+    sensor_write_u8(0x50, 0x03); // acce
+    vTaskDelay(pdMS_TO_TICKS(3));
 
-    platform_printf("ACC_RANGE :0x%02x GYR_RANGE :0x%02x \n", acc_range, gyr_range);
-    if ((acc_range != 0x03) || (gyr_range != 0x08) || (acc_odr != 140) || (gyr_odr != 205))
-    {
-        goto soft_res;
-    }
+    // uint8_t acc_range = sensor_read_u8(0x41);
+    // uint8_t gyr_range = sensor_read_u8(0x43);
+    // uint8_t acc_odr = sensor_read_u8(0x40);
+    // uint8_t gyr_odr = sensor_read_u8(0x42);
+
+    // platform_printf("ACC_RANGE :0x%02x GYR_RANGE :0x%02x \n", acc_range, gyr_range);
+    // if ((acc_range != 0x03) || (gyr_range != 0x08) || (acc_odr != 140) || (gyr_odr != 205))
+    // {
+    //     goto soft_res;
+    // }
 
     sensor_is_inited = 1;
-
-    
-    vTaskDelay(pdMS_TO_TICKS(10));
 
     // I2C_DmaEnable(APB_I2C0, 1);
     // I2C_IntEnable(APB_I2C0, (1 << I2C_INT_CMPL));
@@ -209,14 +224,14 @@ soft_res:
     {
         if (xSemaphoreTake(sensor_xSemaphore, portMAX_DELAY) == pdTRUE)
         {
-            sensor_read(0x0C, sensor_data, sizeof(sensor_data));
+            sensor_read(0x1f, sensor_data, sizeof(sensor_data));
             if (xSemaphoreTake(imu_data_mutex, 0) == pdTRUE)
             {
                 imu_raw_data = (int16_t *)sensor_data;
-                for (uint8_t i = 0; i < 6; i++)
-                {
-                    imu_raw_data[i] = __REV16(imu_raw_data[i]);
-                }
+                // for (uint8_t i = 0; i < 6; i++)
+                // {
+                //     imu_raw_data[i] = __REV16(imu_raw_data[i]);
+                // }
                 xSemaphoreGive(imu_data_mutex);
             }
             algo_imu_data_update_event_handler(&imu_raw_data[3], imu_raw_data);
