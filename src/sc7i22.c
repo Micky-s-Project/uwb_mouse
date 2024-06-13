@@ -194,8 +194,8 @@ soft_res:
     // sensor_write_u8(0x14, 0x00);
     sensor_write_u8(0x4E, 0x0F);
 
-    sensor_write_u8(0x4F, 0x03); // gyro
-    sensor_write_u8(0x50, 0x03); // acce
+    sensor_write_u8(0x4F, 0x06); // gyro
+    sensor_write_u8(0x50, 0x06); // acce
     vTaskDelay(pdMS_TO_TICKS(3));
 
     // uint8_t acc_range = sensor_read_u8(0x41);
@@ -225,15 +225,15 @@ soft_res:
         if (xSemaphoreTake(sensor_xSemaphore, portMAX_DELAY) == pdTRUE)
         {
             sensor_read(0x1f, sensor_data, sizeof(sensor_data));
-            if (xSemaphoreTake(imu_data_mutex, 0) == pdTRUE)
-            {
+            // if (xSemaphoreTake(imu_data_mutex, 0) == pdTRUE)
+            // {
                 imu_raw_data = (int16_t *)sensor_data;
                 // for (uint8_t i = 0; i < 6; i++)
                 // {
                 //     imu_raw_data[i] = __REV16(imu_raw_data[i]);
                 // }
-                xSemaphoreGive(imu_data_mutex);
-            }
+            //     xSemaphoreGive(imu_data_mutex);
+            // }
             algo_imu_data_update_event_handler(&imu_raw_data[3], imu_raw_data);
             // platform_printf("acc_x=%d,acc_y=%d,acc_z=%d,gyr_x=%d,gyr_y=%d,gyr_z=%d\r\n",
             //                 imu_raw_data[0], imu_raw_data[1], imu_raw_data[2], imu_raw_data[3], imu_raw_data[4], imu_raw_data[5]);
