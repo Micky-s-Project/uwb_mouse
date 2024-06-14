@@ -14,7 +14,7 @@
 /*
             时间戳
 */
-#define MOUSE_MOVE_RATE 10
+#define MOUSE_MOVE_RATE 100
 
 SemaphoreHandle_t imu_data_mutex = NULL;
 
@@ -27,7 +27,7 @@ void algorithm_init()
         vTaskDelay(1);
     }
     xTaskCreate(algo_uwb_data_update_event_handler, "uwb task", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, NULL);
-    // mouse_init();
+    mouse_init();
     platform_printf("algo inited!\n");
 }
 void uwb_data_parse();
@@ -102,8 +102,8 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
         float euler[3] = {0};
         attitude_calculator_get_euler(euler);
         mouse_cal_pix(euler[0], euler[2]);
-        platform_printf("t:%f,w:%f,%f,%f,a:%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2], imu_data.acc_data[0], imu_data.acc_data[1], imu_data.acc_data[2]);
-        platform_printf("e:%f,%f,%f\n", euler[0] *57.3, euler[1]*57.3, euler[2]*57.3);
+        //platform_printf("t:%f,w:%f,%f,%f,a:%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2], imu_data.acc_data[0], imu_data.acc_data[1], imu_data.acc_data[2]);
+        //platform_printf("e:%f,%f,%f\n", euler[0] *57.3, euler[1]*57.3, euler[2]*57.3);
     }
     last_imu_data_tick = tick;
 }
@@ -181,7 +181,7 @@ void uwb_data_parse()
                 uwb_data.x = uwb_data.dis * sinf(uwb_data.aoa);
                 uwb_data.y = uwb_data.dis * cosf(uwb_data.aoa);
                 uwb_data.ready = 1;
-                platform_printf("uwb_data:%f,%f,%f,%f\n", uwb_data.dis, uwb_data.aoa * 57.3, uwb_data.x, uwb_data.y);
+                // platform_printf("uwb_data:%f,%f,%f,%f\n", uwb_data.dis, uwb_data.aoa * 57.3, uwb_data.x, uwb_data.y);
             }
 
             //
