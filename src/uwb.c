@@ -5,7 +5,7 @@
 #include "peripheral_uart.h"
 #include "platform_api.h"
 #include "algo_interfaces.h"
-
+#include "uwb_data_parser.h"
 #define UWB_RX_PIN 4
 #define UWB_PWR_PIN 5
 
@@ -31,7 +31,7 @@ uint32_t uart1_isr(void *user_data)
         if (status == 0)
             break;
 
-        APB_UART1->IntClear = status;
+        
 
         if (status & (1 << bsUART_RECEIVE_INTENAB))
         {
@@ -42,6 +42,7 @@ uint32_t uart1_isr(void *user_data)
             // xQueueSend(uwb_queue, c, 0);
             BaseType_t xHigherPriorityTaskWoken;
             xHigherPriorityTaskWoken = 1;
+            uwb_data_parse_input(c);
             // xQueueSendFromISR(uwb_queue, &c, &xHigherPriorityTaskWoken);
         }
 
@@ -62,6 +63,7 @@ uint32_t uart1_isr(void *user_data)
             platform_printf("bsUART_BREAK_INTENAB\n");
         }
     }
+    APB_UART1->IntClear = status;
     return 0;
 }
 StaticQueue_t xQueueBuffer;

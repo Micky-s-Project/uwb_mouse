@@ -91,12 +91,23 @@ uint32_t gpio0_isr(void *user_data)
     uint32_t current = GIO_ReadAll();
     uint32_t status = GIO_GetAllIntStatus();
     static BaseType_t xHigherPriorityTaskWoken;
+    sensor_read(0x1f, sensor_data, sizeof(sensor_data));
+    // if (xSemaphoreTake(imu_data_mutex, 0) == pdTRUE)
+    // {
+    imu_raw_data = (int16_t *)sensor_data;
+    // for (uint8_t i = 0; i < 6; i++)
+    // {
+    //     imu_raw_data[i] = __REV16(imu_raw_data[i]);
+    // }
+    //     xSemaphoreGive(imu_data_mutex);
+    // }
+    algo_imu_data_update_event_handler(&imu_raw_data[3], imu_raw_data);
     GIO_ClearAllIntStatus();
     // platform_printf("gpio_isr evt\r\n");
-    if (sensor_xSemaphore != NULL)
-    {
-        xSemaphoreGiveFromISR(sensor_xSemaphore, &xHigherPriorityTaskWoken);
-    }
+    // if (sensor_xSemaphore != NULL)
+    // {
+    //     xSemaphoreGiveFromISR(sensor_xSemaphore, &xHigherPriorityTaskWoken);
+    // }
 
     //     I2C_DmaEnable(APB_I2C0, 1);
     //     I2C_CtrlUpdateDirection(APB_I2C0, I2C_TRANSACTION_MASTER2SLAVE);
@@ -190,7 +201,7 @@ soft_res:
     sensor_write_u8(0x65, 0x7f);
     sensor_write_u8(0x63, 0x20);
     sensor_write_u8(0x64, 0x60);
-    sensor_write_u8(0x4C, 0x20);//little endian
+    sensor_write_u8(0x4C, 0x20); // little endian
     // sensor_write_u8(0x14, 0x00);
     sensor_write_u8(0x4E, 0x0F);
 
@@ -224,17 +235,17 @@ soft_res:
     {
         if (xSemaphoreTake(sensor_xSemaphore, portMAX_DELAY) == pdTRUE)
         {
-            sensor_read(0x1f, sensor_data, sizeof(sensor_data));
-            // if (xSemaphoreTake(imu_data_mutex, 0) == pdTRUE)
-            // {
-                imu_raw_data = (int16_t *)sensor_data;
-                // for (uint8_t i = 0; i < 6; i++)
-                // {
-                //     imu_raw_data[i] = __REV16(imu_raw_data[i]);
-                // }
-            //     xSemaphoreGive(imu_data_mutex);
-            // }
-            algo_imu_data_update_event_handler(&imu_raw_data[3], imu_raw_data);
+            // sensor_read(0x1f, sensor_data, sizeof(sensor_data));
+            // // if (xSemaphoreTake(imu_data_mutex, 0) == pdTRUE)
+            // // {
+            //     imu_raw_data = (int16_t *)sensor_data;
+            //     // for (uint8_t i = 0; i < 6; i++)
+            //     // {
+            //     //     imu_raw_data[i] = __REV16(imu_raw_data[i]);
+            //     // }
+            // //     xSemaphoreGive(imu_data_mutex);
+            // // }
+            // algo_imu_data_update_event_handler(&imu_raw_data[3], imu_raw_data);
             // platform_printf("acc_x=%d,acc_y=%d,acc_z=%d,gyr_x=%d,gyr_y=%d,gyr_z=%d\r\n",
             //                 imu_raw_data[0], imu_raw_data[1], imu_raw_data[2], imu_raw_data[3], imu_raw_data[4], imu_raw_data[5]);
         }

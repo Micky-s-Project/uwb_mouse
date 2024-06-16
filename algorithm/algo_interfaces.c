@@ -16,7 +16,7 @@
 /*
             时间戳
 */
-#define MOUSE_MOVE_RATE 1
+#define MOUSE_MOVE_RATE 100
 
 SemaphoreHandle_t imu_data_mutex = NULL;
 
@@ -28,7 +28,7 @@ void algorithm_init()
         vTaskDelay(1);
     }
 
-    xTaskCreate(uwb_data_parse_task, "uwb_data_parse_task", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, NULL);
+    // xTaskCreate(uwb_data_parse_task, "uwb_data_parse_task", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, NULL);
     mouse_init();
     platform_printf("algo inited!\n");
 }
@@ -59,7 +59,7 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
     tick = get_tick();
 
     get_uwb_data(&uwb_data);
-
+    platform_printf("imu:%lld\n", tick);
     imu_data_run_count++;
     if (imu_data_run_count == 1600)
     {
@@ -77,14 +77,14 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
     if (uwb_data.ready == 0)
     {
 
-        attitude_calculate(t, 0);
+        // attitude_calculate(t, 0);
         // position_calculate(t, 0);
     }
     else
     {
         //
 
-        attitude_calculate(t, 1);
+        // attitude_calculate(t, 1);
         // position_calculate(t, 1);
         // uwb_data.ready = 0;
     }
