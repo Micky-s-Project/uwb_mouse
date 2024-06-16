@@ -52,7 +52,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
         float R[9] = {10000, 0, 0, 0, 10000, 0, 0, 0, 10000};
         float g_x0[3] = {f[0], f[1], f[2]};
         float m_x0[3] = {0, 1, 0};
-        if (uwb_data_ready  && (f[0] != 0 || f[1] != 0 || f[2] != 0))
+        if (uwb_data_ready && (f[0] != 0 || f[1] != 0 || f[2] != 0))
         {
             cal_cbn(g_x0, m_x0, cbn);
             ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
@@ -92,7 +92,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             cal_ynb(ynb, aoa);
 
             float tmp = fabsf(sqrt_carmack(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]) - G_CONST);
-            float weight = tmp * tmp * 1000.f;
+            float weight = tmp * tmp * 10000.f;
             float R_t[9] = {10000, 0, 0, 0, 10000, 0, 0, 0, 10000};
             R_t[0] = weight;
             R_t[4] = weight;
@@ -112,7 +112,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
         kalman3_next(&m_n_b_kalman, so3, ynb, !uwb_data_ready);
         if (abs(g_n_b_kalman.x_k_1_INIT[0] - oldg[0]) > 0.05 || abs(g_n_b_kalman.x_k_1_INIT[1] - oldg[1]) > 0.05 || abs(g_n_b_kalman.x_k_1_INIT[2] - oldg[2]) > 0.05)
         {
-					platform_printf("tw:%f,%f,%f,%f\n", t,w[0], w[1], w[2]);
+            platform_printf("tw:%f,%f,%f,%f\n", t, w[0], w[1], w[2]);
             platform_printf("og:%f,%f,%f\n", oldg[0], oldg[1], oldg[2]);
             platform_printf("cbn:%f,%f,%f\n", so3[0], so3[1], so3[2]);
             platform_printf("cbn:%f,%f,%f\n", so3[3], so3[4], so3[5]);

@@ -40,6 +40,8 @@
     "math.h": "c",
     "attitude_calculator.h": "c",
     "stdlib.h": "c",
-    "ingsoc.h": "c"
+    "ingsoc.h": "c",
+    "rte_components.h": "c",
+    "uwb_data_parser.h": "c"
   }
 }

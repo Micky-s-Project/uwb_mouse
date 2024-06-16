@@ -592,6 +592,11 @@
               <FileType>1</FileType>
               <FilePath>.\algorithm\mouse.c</FilePath>
             </File>
+            <File>
+              <FileName>uwb_data_parser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\algorithm\uwb_data_parser.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
