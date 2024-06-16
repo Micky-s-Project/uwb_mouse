@@ -42,7 +42,7 @@ uint32_t uart1_isr(void *user_data)
             // xQueueSend(uwb_queue, c, 0);
             BaseType_t xHigherPriorityTaskWoken;
             xHigherPriorityTaskWoken = 1;
-            // xQueueSendFromISR(uwb_queue, &c, &xHigherPriorityTaskWoken);
+            xQueueSendFromISR(uwb_queue, &c, &xHigherPriorityTaskWoken);
         }
 
         if (status & (1 << bsUART_TIMEOUT_INTENAB))
@@ -68,7 +68,8 @@ StaticQueue_t xQueueBuffer;
 uint8_t uwb_buff[1024];
 void uwb_uart_test()
 {
-    platform_printf("uwb uart%s\n", uwb_buff);
+    // platform_printf("uwb uart%s\n", uwb_buff);
+    uart_reset(APB_UART1);
 }
 void uwb_uart_init()
 {

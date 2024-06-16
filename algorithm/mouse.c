@@ -4,14 +4,15 @@
 #include <math.h>
 #include "bsp_usb_hid.h"
 
-#define queue_len 50
+#define queue_len 100
 float posx_data[queue_len] = {0}, posy_data[queue_len] = {0};
 Queue q_posx, q_posy;
 
 #define euler_queue_len 3
 float pitch_data[euler_queue_len] = {0}, yaw_data[euler_queue_len] = {0};
 Queue q_pitch, q_yaw;
-
+float y_weight = 1;
+float y_last = 0.5;
 float y = 0.5;
 int16_t pix_x = 0, pix_y = 0, last_pix_x = 0, last_pix_y = 0;
 uint16_t data_count;
@@ -32,9 +33,9 @@ uint64_t init_tick = 0;
 void mouse_control_init()
 {
     float euler[3] = {0};
-    float xy[2] = {0};
+    float dis;
     attitude_calculator_get_euler(euler);
-    algo_get_uwb_data_xy(xy);
+    algo_get_uwb_data_dis(&dis);
     if (platform_get_us_time() - init_tick > 10000000) // 10s
     {
         init_count = 0;
@@ -53,7 +54,8 @@ void mouse_control_init()
     {
         x_sensi = 1920.0f / (fabsf(init_yaw[1] - init_yaw[0])) / 2.0f;
         y_sensi = 1080.0f / (fabsf(init_pitch[1] - init_pitch[0])) / 2.0f;
-        y = xy[1];
+        y = dis * cosf(init_yaw[1]);
+        y_last = y;
         // platform_printf("mouse_sens:%f,%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3, q_pitch.mean * 57.3, dx, dy, pix_x, pix_y);
         init_count = 0;
     }
@@ -83,12 +85,17 @@ void mouse_cal_pix(float pitch, float yaw, float dis)
     queue_input(&q_pitch, pitch);
     queue_input(&q_yaw, yaw);
     queue_input(&q_posy, dis * cosf(yaw));
-    pix_x = angel_2_pix(-q_yaw.mean, q_posy.mean / y, 1);
-    pix_y = angel_2_pix((q_pitch.mean + 1.5708), q_posy.mean / y, 1);
+    if (fabsf(q_posy.mean - y_last) > 0.15)
+    {
+        y_weight = q_posy.mean / y;
+        y_last = q_posy.mean;
+    }
+    pix_x = angel_2_pix(-q_yaw.mean, y_weight, 1);
+    pix_y = angel_2_pix((q_pitch.mean + 1.5708), y_weight, 1);
     int16_t dx = pix_x - last_pix_x, dy = pix_y - last_pix_y;
     last_pix_x = pix_x;
     last_pix_y = pix_y;
-    // platform_printf("mouse:%f,%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3, q_pitch.mean * 57.3, dx, dy, pix_x, pix_y);
+    platform_printf("mouse:%f,%f,%f,%f,%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3, q_pitch.mean * 57.3, q_posy.mean, y, dis, dx, dy, pix_x, pix_y);
     extern uint8_t ready_output_xy;
     if (ready_output_xy || 1)
     {

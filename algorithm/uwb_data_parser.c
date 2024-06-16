@@ -63,12 +63,12 @@ void uwb_data_parse_task(void *p)
             if (no_index[0] != -1 && no_index[1] != -1)
             {
                 float dis_tmp = 0, aoa_tmp = 0;
-                platform_printf("uwb_data_raw:%s\n", uwb_data_pool);
+                // platform_printf("uwb_data_raw:%s\n", uwb_data_pool);
                 if (sscanf((char *)uwb_data_pool, "%*[^:]: %f, %*[^:]: %f", &(dis_tmp), &(aoa_tmp)) == 2)
                 // if (sscanf((char *)uwb_data_pool, "NO(%*d). D(m): %f, A: %d,%*d", &dis, &aoa) == 2)
                 {
                     // platform_printf("uwb_data:%d,%d\n", (int)(dis_tmp * 1000), (int)aoa_tmp);
-                    if (dis_tmp > 0)
+                    if (((fabsf(dis_tmp - uwb_data.dis) < 0.5 && fabsf(0.01745329 * aoa_tmp - uwb_data.aoa) < 0.5) || uwb_data.dis == 0) && dis_tmp > 0)
                     {
                         if (xSemaphoreTake(uwb_data_mutex, 0) == pdTRUE)
                         {

@@ -16,7 +16,7 @@
 /*
             时间戳
 */
-#define MOUSE_MOVE_RATE 1
+#define MOUSE_MOVE_RATE 50
 
 SemaphoreHandle_t imu_data_mutex = NULL;
 
@@ -95,7 +95,7 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
         float euler[3] = {0};
         attitude_calculator_get_euler(euler);
         mouse_cal_pix(euler[0], euler[2], uwb_data.dis);
-        platform_printf("u:%d\n", uwb_count);
+        // platform_printf("u:%d\n", uwb_count);
         uwb_count = 0;
         // platform_printf("t:%f,w:%f,%f,%f,a:%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2], imu_data.acc_data[0], imu_data.acc_data[1], imu_data.acc_data[2]);
         // platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
