@@ -82,12 +82,13 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
     else
     {
         uint8_t gnb_only_predict = 1, ynb_only_predict = 1;
-        static uint16_t predict_cd = 0, ynb_predict_cd = 0;
+        static uint16_t update_cd = 0, ynb_update_cd = 0;
+        static uint16_t predict_cd = 0;
         float ynb[3] = {0};
         float aoa = 0;
-        if (predict_cd++ == 2000)
+        if (update_cd++ == 2000)
         {
-            predict_cd = 0;
+            update_cd = 0;
             gnb_only_predict = 0;
 
             float tmp = fabsf(sqrt_carmack(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]) - G_CONST);
@@ -99,11 +100,11 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             copy_f32(g_n_b_kalman.R_INIT, R_t, 9);
             // ALGO_DEBUG("ynb:%f,%f,%f\n", ynb[0], ynb[1], ynb[2]);
         }
-        ynb_predict_cd++;
+        ynb_update_cd++;
 
-        if (uwb_data_ready && ynb_predict_cd > 2000)
+        if (uwb_data_ready && ynb_update_cd > 2000)
         {
-            ynb_predict_cd = 0;
+            ynb_update_cd = 0;
             ynb_only_predict = 0;
             algo_get_uwb_data_aoa(&aoa);
             cal_ynb(ynb, aoa);
