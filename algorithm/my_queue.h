@@ -9,6 +9,7 @@ typedef struct
 {
     bool _is_inited;     // 是否初始化
     float *_data_addr; // 数据
+    uint8_t data_num;       // 容量
     uint8_t len;         // 容量
     uint8_t _data_i;     // 当前入队数据指针
 

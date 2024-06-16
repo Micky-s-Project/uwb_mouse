@@ -7,11 +7,13 @@
 #include "uwb.h"
 #include "uwb_data_parser.h"
 
-UWB_DATA_t uwb_data = {0};
-SemaphoreHandle_t uwb_data_mutex = NULL;
+static UWB_DATA_t uwb_data = {0};
+static SemaphoreHandle_t uwb_data_mutex = NULL;
 void uwb_data_parse_task(void *p)
 {
+    
     QueueHandle_t uwb_queue = 0;
+    
     char data_char;
     uint8_t uwb_data_pool[512] = {0};
     uint16_t uwb_data_pool_index = 0;
@@ -40,6 +42,7 @@ void uwb_data_parse_task(void *p)
         if (xQueueReceive(uwb_queue, &data_char, 0xFFFFFFFF))
         {
             // platform_printf("%c", data_char);
+            
             if (data_char == 'O' && uwb_data_pool[uwb_data_pool_index - 1] == 'N')
             {
                 if (no_index[0] == -1)
@@ -55,29 +58,26 @@ void uwb_data_parse_task(void *p)
             uwb_data_pool[uwb_data_pool_index++] = data_char;
             if (no_index[0] != -1 && no_index[1] != -1)
             {
-                // platform_printf("uwb_data_raw:%d,%d,%s\n", no_index[0], no_index[1], uwb_data_pool);
-                // if (sscanf((char *)uwb_data_pool, "%*[^:]: %f, %*[^:]: %f", &(dis_tmp), &(aoa_tmp)) == 2)
-                if (sscanf((char *)uwb_data_pool, "NO(%*d). D(m): %f, A: %d,%*d", &dis, &aoa) == 2)
+                float dis_tmp = 0, aoa_tmp = 0;
+                // platform_printf("uwb_data_raw:%s\n", uwb_data_pool);
+                if (sscanf((char *)uwb_data_pool, "%*[^:]: %f, %*[^:]: %f", &(dis_tmp), &(aoa_tmp)) == 2)
+                // if (sscanf((char *)uwb_data_pool, "NO(%*d). D(m): %f, A: %d,%*d", &dis, &aoa) == 2)
                 {
-                    // platform_printf("uwb_data:%f,%d\n", dis, aoa);
-                    if (abs(aoa) < 180)
+                    // platform_printf("uwb_data:%d,%d\n", (int)(dis_tmp * 1000), (int)aoa_tmp);
+                    if (((fabsf(dis_tmp - uwb_data.dis) < 0.5 && fabsf(0.01745329 * aoa_tmp - uwb_data.aoa) < 0.5 ) || uwb_data.dis == 0) && dis_tmp > 0)
                     {
-                        platform_printf("uwb_error_data:%f,%d\n", dis, aoa);
+                        if (xSemaphoreTake(uwb_data_mutex, 0) == pdTRUE)
+                        {
+                            uwb_data.dis = dis_tmp;
+                            uwb_data.aoa = 0.01745329 * aoa_tmp;
+                            uwb_data.x = uwb_data.dis * sinf(uwb_data.aoa);
+                            uwb_data.y = uwb_data.dis * cosf(uwb_data.aoa);
+                            uwb_data.ready = 1;
+                            xSemaphoreGive(uwb_data_mutex);
+                            // platform_printf("uwb_data:%d,%d,%d,%d\n", (int)(uwb_data.dis * 1000), (int)(uwb_data.aoa * 57.3 * 1000), (int)(uwb_data.x * 1000), (int)(uwb_data.y * 1000));
+                        }
                     }
-                    // if (((fabsf(dis_tmp - uwb_data.dis) < 0.5 && fabsf(0.01745329 * aoa_tmp - uwb_data.aoa) < 0.5 ) || uwb_data.dis == 0) && dis_tmp > 0)
-                    // {
-                    //     if (xSemaphoreTake(uwb_data_mutex, 0) == pdTRUE)
-                    //     {
-                    //         uwb_data.dis = dis_tmp;
-                    //         uwb_data.aoa = 0.01745329 * aoa_tmp;
-                    //         uwb_data.x = uwb_data.dis * sinf(uwb_data.aoa);
-                    //         uwb_data.y = uwb_data.dis * cosf(uwb_data.aoa);
-                    //         uwb_data.ready = 1;
-                    //         xSemaphoreGive(uwb_data_mutex);
-                    //         // platform_printf("uwb_data:%f,%f,%f,%f\n", uwb_data.dis, uwb_data.aoa * 57.3, uwb_data.x, uwb_data.y);
-                    //     }
-                    // }
-                    //
+                    
                 }
 
                 memset(uwb_data_pool, 0, 256);
@@ -91,12 +91,6 @@ void uwb_data_parse_task(void *p)
             {
                 memset(uwb_data_pool, 0, 256);
                 uwb_data_pool_index = 0;
-            }
-            uwb_data_run_count++;
-            if (uwb_data_run_count == 1000)
-            {
-                uwb_data_run_count = 0;
-                // platform_printf("uwb:%lld\n", tick);
             }
         }
     }

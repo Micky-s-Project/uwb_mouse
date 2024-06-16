@@ -15,8 +15,8 @@ Queue q_pitch, q_yaw;
 int16_t y = 750;
 int16_t pix_x = 0, pix_y = 0, last_pix_x = 0, last_pix_y = 0;
 uint16_t data_count;
-float x_sensi = 57.3f * 19.2f;
-float y_sensi = 57.3f * 10.8f;
+float x_sensi = 57.3f * 19.2f /2.0f;
+float y_sensi = 57.3f * 10.8f / 2.0f;
 void mouse_init()
 {
     queue_init(&q_posx, posx_data, queue_len, QUENE_ANALYZE_OPEN);
@@ -51,8 +51,9 @@ void mouse_control_init()
 
     if (init_count == 2)
     {
-        x_sensi = 1920.0f / (init_yaw[1] - init_yaw[0]) / 57.3f;
-        y_sensi = 1080.0f / (init_pitch[1] - init_pitch[0]) / 57.3f;
+        x_sensi = 1920.0f / (fabsf(init_yaw[1] - init_yaw[0])) / 2.0f ;
+        y_sensi = 1080.0f / (fabsf(init_pitch[1] - init_pitch[0])) / 2.0f;
+        // platform_printf("mouse_sens:%f,%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3, q_pitch.mean * 57.3, dx, dy, pix_x, pix_y);
         init_count = 0;
     }
 }

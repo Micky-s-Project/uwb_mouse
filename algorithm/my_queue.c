@@ -11,13 +11,16 @@
 bool queue_init(Queue *queue_addr, float *data_addr, uint8_t len, bool open_analyze)
 {
     // 如果队列没有经过初始化，则进行初始化
-    if (queue_addr->_is_inited == false) {
+    if (queue_addr->_is_inited == false)
+    {
         queue_addr->_data_addr = data_addr;
         queue_addr->len = len;
         queue_addr->_open_analyze = open_analyze;
         queue_addr->_is_inited = true;
         return true;
-    } else {
+    }
+    else
+    {
         return false;
     }
 }
@@ -31,14 +34,21 @@ bool queue_init(Queue *queue_addr, float *data_addr, uint8_t len, bool open_anal
 float queue_input(Queue *queue_addr, float input_data)
 {
     // 如果队列经过初始化，则加入数据
-    if (queue_addr->_is_inited) {
+    if (queue_addr->_is_inited)
+    {
         uint8_t index = queue_addr->_data_i;
         uint8_t len = queue_addr->len;
 
         // update index
         index += 1;
-        if (index == len) {
+        if (index == len)
+        {
             index = 0;
+        }
+
+        if (queue_addr->data_num < len)
+        {
+            queue_addr->data_num ++;
         }
         queue_addr->_data_i = index;
 
@@ -47,7 +57,8 @@ float queue_input(Queue *queue_addr, float input_data)
         queue_addr->_data_addr[index] = input_data;
 
         // 如果打开数据统计
-        if (queue_addr->_open_analyze) {
+        if (queue_addr->_open_analyze)
+        {
             uint8_t max_index = queue_addr->_max_i;
             uint8_t min_index = queue_addr->_min_i;
             float max = queue_addr->max;
@@ -55,18 +66,23 @@ float queue_input(Queue *queue_addr, float input_data)
             // cal mean
             queue_addr->sum -= pop_data;
             queue_addr->sum += input_data;
-            queue_addr->mean = queue_addr->sum * 1.0 / len;
+            queue_addr->mean = queue_addr->sum * 1.0 / queue_addr->data_num;
 
             // cal max
-            if (max_index == index) {
+            if (max_index == index)
+            {
                 max = 0;
-                for (uint8_t i = 0; i < len; i++) {
-                    if (queue_addr->_data_addr[i] > max) {
+                for (uint8_t i = 0; i < len; i++)
+                {
+                    if (queue_addr->_data_addr[i] > max)
+                    {
                         max = queue_addr->_data_addr[i];
                         max_index = i;
                     }
                 }
-            } else if (input_data > max) {
+            }
+            else if (input_data > max)
+            {
                 max = input_data;
                 max_index = index;
             }
@@ -74,28 +90,38 @@ float queue_input(Queue *queue_addr, float input_data)
             queue_addr->_max_i = max_index;
 
             // cal min
-            if (min_index == index) {
+            if (min_index == index)
+            {
                 min = 0;
-                for (uint8_t i = 0; i < len; i++) {
-                    if (queue_addr->_data_addr[i] < min) {
+                for (uint8_t i = 0; i < len; i++)
+                {
+                    if (queue_addr->_data_addr[i] < min)
+                    {
                         min = queue_addr->_data_addr[i];
                         min_index = i;
                     }
                 }
-            } else if (input_data < min) {
+            }
+            else if (input_data < min)
+            {
                 min = input_data;
                 min_index = index;
             }
             queue_addr->min = min;
             queue_addr->_min_i = min_index;
-            if (fabsf(max) > fabsf(min)) {
+            if (fabsf(max) > fabsf(min))
+            {
                 queue_addr->abs_max = fabsf(max);
-            } else {
+            }
+            else
+            {
                 queue_addr->abs_max = fabsf(min);
             }
         }
         return pop_data;
-    } else {
+    }
+    else
+    {
         return 0;
     }
 }
@@ -108,9 +134,12 @@ float queue_input(Queue *queue_addr, float input_data)
  */
 float queue_get(Queue *queue_addr, uint8_t last_num)
 {
-    if (last_num < queue_addr->len) {
+    if (last_num < queue_addr->len)
+    {
         return queue_addr->_data_addr[(queue_addr->_data_i - last_num + queue_addr->len) % queue_addr->len];
-    } else {
+    }
+    else
+    {
         return 0;
     }
 }

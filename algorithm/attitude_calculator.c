@@ -68,28 +68,27 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             kalman3_init(&g_n_b_kalman, g_x0, P0, Q, R);
             kalman3_init(&m_n_b_kalman, m_x0, P0, Q, R);
             platform_printf("initg:%f,%f,%f\n", g_x0[0], g_x0[1], g_x0[2]);
-            platform_printf("initm:%f,%f,%f\n", m_x0[0], m_x0[1], m_x0[2]);
+            platform_printf("initm:%f,%f,%f,%f\n", m_x0[0], m_x0[1], m_x0[2], aoa *57.3);
             platform_printf("\nattitude init!\n\n");
 
             cal_cbn(g_n_b_kalman.x_k_1.pData, m_n_b_kalman.x_k_1.pData, cbn);
-            ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
-            ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
-            ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[6], cbn[7], cbn[8]);
+            platform_printf("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
+            platform_printf("cbn:%f,%f,%f\n", cbn[3], cbn[4], cbn[5]);
+            platform_printf("cbn:%f,%f,%f\n", cbn[6], cbn[7], cbn[8]);
             cal_euler(cbn);
+            platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
         }
     }
     else
     {
-        uint8_t only_predict = 1;
-        static uint16_t predict_cd = 0;
+        uint8_t gnb_only_predict = 1, ynb_only_predict = 1;
+        static uint16_t predict_cd = 0, ynb_predict_cd = 0;
         float ynb[3] = {0};
-        if (predict_cd++ == 2000 || uwb_data_ready)
+        float aoa = 0;
+        if (predict_cd++ == 2000)
         {
             predict_cd = 0;
-            only_predict = 0;
-            float aoa = 0;
-            algo_get_uwb_data_aoa(&aoa);
-            cal_ynb(ynb, aoa);
+            gnb_only_predict = 0;
 
             float tmp = fabsf(sqrt_carmack(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]) - G_CONST);
             float weight = tmp * tmp * 10000.f;
@@ -98,27 +97,32 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             R_t[4] = weight;
             R_t[8] = weight;
             copy_f32(g_n_b_kalman.R_INIT, R_t, 9);
-            weight = tmp * 10000.0f;
-            R_t[0] = weight;
-            R_t[4] = weight;
-            R_t[8] = weight;
-            // copy_f32(m_n_b_kalman.R_INIT, R_t, 9);
             // ALGO_DEBUG("ynb:%f,%f,%f\n", ynb[0], ynb[1], ynb[2]);
+        }
+        ynb_predict_cd++;
+
+        if (uwb_data_ready && ynb_predict_cd > 2000)
+        {
+            ynb_predict_cd = 0;
+            ynb_only_predict = 0;
+            algo_get_uwb_data_aoa(&aoa);
+            cal_ynb(ynb, aoa);
+            platform_printf("ynb:%f,%f,%f,%f\n", ynb[0], ynb[1], ynb[2], aoa * 57.3);
         }
         float so3[9] = {0};
         cal_so3(w, t, so3);
-        float oldg[3] = {g_n_b_kalman.x_k_1_INIT[0], g_n_b_kalman.x_k_1_INIT[1], g_n_b_kalman.x_k_1_INIT[2]};
-        kalman3_next(&g_n_b_kalman, so3, f, only_predict);
-        kalman3_next(&m_n_b_kalman, so3, ynb, !uwb_data_ready);
-        if (abs(g_n_b_kalman.x_k_1_INIT[0] - oldg[0]) > 0.05 || abs(g_n_b_kalman.x_k_1_INIT[1] - oldg[1]) > 0.05 || abs(g_n_b_kalman.x_k_1_INIT[2] - oldg[2]) > 0.05)
-        {
-            platform_printf("tw:%f,%f,%f,%f\n", t, w[0], w[1], w[2]);
-            platform_printf("og:%f,%f,%f\n", oldg[0], oldg[1], oldg[2]);
-            platform_printf("cbn:%f,%f,%f\n", so3[0], so3[1], so3[2]);
-            platform_printf("cbn:%f,%f,%f\n", so3[3], so3[4], so3[5]);
-            platform_printf("cbn:%f,%f,%f\n", so3[6], so3[7], so3[8]);
-            platform_printf("g:%f,%f,%f\n", g_n_b_kalman.x_k_1.pData[0], g_n_b_kalman.x_k_1.pData[1], g_n_b_kalman.x_k_1.pData[2]);
-        }
+        // float oldg[3] = {g_n_b_kalman.x_k_1_INIT[0], g_n_b_kalman.x_k_1_INIT[1], g_n_b_kalman.x_k_1_INIT[2]};
+        kalman3_next(&g_n_b_kalman, so3, f, gnb_only_predict);
+        kalman3_next(&m_n_b_kalman, so3, ynb, ynb_only_predict);
+        // if (abs(g_n_b_kalman.x_k_1_INIT[0] - oldg[0]) > 0.05 || abs(g_n_b_kalman.x_k_1_INIT[1] - oldg[1]) > 0.05 || abs(g_n_b_kalman.x_k_1_INIT[2] - oldg[2]) > 0.05)
+        // {
+        //     platform_printf("tw:%f,%f,%f,%f\n", t, w[0], w[1], w[2]);
+        //     platform_printf("og:%f,%f,%f\n", oldg[0], oldg[1], oldg[2]);
+        //     platform_printf("cbn:%f,%f,%f\n", so3[0], so3[1], so3[2]);
+        //     platform_printf("cbn:%f,%f,%f\n", so3[3], so3[4], so3[5]);
+        //     platform_printf("cbn:%f,%f,%f\n", so3[6], so3[7], so3[8]);
+        //     platform_printf("g:%f,%f,%f\n", g_n_b_kalman.x_k_1.pData[0], g_n_b_kalman.x_k_1.pData[1], g_n_b_kalman.x_k_1.pData[2]);
+        // }
         cal_cbn(g_n_b_kalman.x_k_1.pData, m_n_b_kalman.x_k_1.pData, cbn);
         cal_aln(cbn, f, a);
         // ALGO_DEBUG("cbn:%f,%f,%f\n", cbn[0], cbn[1], cbn[2]);
@@ -128,6 +132,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
         cal_euler(cbn);
         if (uwb_data_ready == 1)
         {
+
             // platform_printf("a:%f,%f,%f\n", a[0], a[1], a[2]);
             // platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
         }

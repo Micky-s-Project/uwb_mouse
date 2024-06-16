@@ -189,7 +189,7 @@ uint32_t query_deep_sleep_allowed(void *dummy, void *user_data)
     return 0;
 }
 
-#define BTN_IO_INDEX GIO_GPIO_4
+#define BTN_IO_INDEX GIO_GPIO_3
 uint8_t ready_output_xy = 0;
 void btn_task(void *p)
 {
@@ -237,7 +237,7 @@ int app_main()
 
     setup_peripherals();
     cube_setup_peripherals();
-    // xTaskCreate(btn_task, "btn_task", 128, NULL, 2, NULL);
+    xTaskCreate(btn_task, "btn_task", 128, NULL, 2, NULL);
     bsp_usb_init();
     sc7122_init();
     uwb_uart_init();

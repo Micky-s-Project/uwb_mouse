@@ -16,7 +16,7 @@
 /*
             时间戳
 */
-#define MOUSE_MOVE_RATE 100
+#define MOUSE_MOVE_RATE 50
 
 SemaphoreHandle_t imu_data_mutex = NULL;
 
@@ -28,8 +28,9 @@ void algorithm_init()
         imu_data_mutex = get_imu_data_mutex();
         vTaskDelay(1);
     }
+
     xTaskCreate(uwb_data_parse_task, "uwb_data_parse_task", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, NULL);
-    // mouse_init();
+    mouse_init();
     platform_printf("algo inited!\n");
 }
 
@@ -43,7 +44,7 @@ float tick_2_second(Tick_t tick)
 {
     return (float)tick / 1000000.0f;
 }
-
+UWB_DATA_t uwb_data = {0};
 typedef struct IMU_DATA_t
 {
     int16_t gyro_data_raw[3];
@@ -57,7 +58,7 @@ void imu_data_parse(int16_t gyro_data_raw[3], int16_t acc_data_raw[3]);
 void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_data_raw[3])
 {
     tick = get_tick();
-    UWB_DATA_t uwb_data;
+
     get_uwb_data(&uwb_data);
 
     imu_data_run_count++;
@@ -72,6 +73,7 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
     gyro_data_zero_cali(imu_data.gyro_data, acc_data_raw);
     //     xSemaphoreGive(imu_data_mutex);
     // }
+
     float t = tick_2_second(tick - last_imu_data_tick);
     if (uwb_data.ready == 0)
     {
@@ -95,10 +97,17 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
         attitude_calculator_get_euler(euler);
         mouse_cal_pix(euler[0], euler[2]);
         // platform_printf("u:%f,%f\n", uwb_data.dis, uwb_data.aoa *57.3);
-        // platform_printf("t:%f,w:%f,%f,%f,a:%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2], imu_data.acc_data[0], imu_data.acc_data[1], imu_data.acc_data[2]);
-        // platform_printf("e:%f,%f,%f\n", euler[0] *57.3, euler[1]*57.3, euler[2]*57.3);
+        //platform_printf("t:%f,w:%f,%f,%f,a:%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2], imu_data.acc_data[0], imu_data.acc_data[1], imu_data.acc_data[2]);
+        platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);
     }
     last_imu_data_tick = tick;
+
+    if (uwb_data.ready == 1)
+    {
+        //platform_printf("uwb_data:%d,%d,%d,%d\n", (int)(uwb_data.dis * 1000), (int)(uwb_data.aoa * 57.3 * 1000), (int)(uwb_data.x * 1000), (int)(uwb_data.y * 1000));
+    }
+
+    uwb_data.ready = 0;
 }
 
 void imu_data_parse(int16_t gyro_data_raw[3], int16_t acc_data_raw[3])
@@ -117,6 +126,11 @@ void algo_get_gyro_data(float *pdata)
     pdata[0] = imu_data.gyro_data[0];
     pdata[1] = imu_data.gyro_data[1];
     pdata[2] = imu_data.gyro_data[2];
+}
+
+void algo_get_aoa_data(float *pdata)
+{
+    pdata[0] = uwb_data.aoa;
 }
 
 void algo_get_acc_data(float *pdata)
