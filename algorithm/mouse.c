@@ -3,7 +3,7 @@
 #include "platform_api.h"
 #include <math.h>
 #include "bsp_usb_hid.h"
-
+#include "algo_interfaces.h"
 #define queue_len 100
 float posx_data[queue_len] = {0}, posy_data[queue_len] = {0};
 Queue q_posx, q_posy;
@@ -36,14 +36,20 @@ void mouse_control_init()
     float dis;
     attitude_calculator_get_euler(euler);
     algo_get_uwb_data_dis(&dis);
-    if (platform_get_us_time() - init_tick > 10000000) // 10s
+    if (init_count == 1 && platform_get_us_time() - init_tick > 10000000) // 10s
     {
         init_count = 0;
     }
-
-    init_pitch[init_count] = euler[0] + 1.5708;
-    init_yaw[init_count] = -euler[2];
-    init_count++;
+    if (init_count != 2)
+    {
+        init_pitch[init_count] = euler[0] + 1.5708;
+        init_yaw[init_count] = -euler[2];
+        init_count++;
+    }
+    else
+    {
+        bsp_usb_handle_hid_mouse_report(0, 0, 1);
+    }
 
     if (init_count == 1)
     {
@@ -57,7 +63,6 @@ void mouse_control_init()
         y = dis * cosf(init_yaw[1]);
         y_last = y;
         // platform_printf("mouse_sens:%f,%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3, q_pitch.mean * 57.3, dx, dy, pix_x, pix_y);
-        init_count = 0;
     }
 }
 void mouse_data_input(float xy[2])
@@ -85,20 +90,27 @@ void mouse_cal_pix(float pitch, float yaw, float dis)
     queue_input(&q_pitch, pitch);
     queue_input(&q_yaw, yaw);
     queue_input(&q_posy, dis * cosf(yaw));
-    if (fabsf(q_posy.mean - y_last) > 0.15)
+    if (fabsf(MAX(0.1, q_posy.mean) - y_last) > MAX(q_posy.mean * 0.2f, 0.15))
     {
-        y_weight = q_posy.mean / y;
-        y_last = q_posy.mean;
+        y_weight = MAX(0.1, q_posy.mean) / y;
+        platform_printf("y_weight:%f,%f,%f,%f\n", y_weight, q_posy.mean, y_last, y);
+        y_last = MAX(0.1, q_posy.mean);
     }
     pix_x = angel_2_pix(-q_yaw.mean, y_weight, 1);
     pix_y = angel_2_pix((q_pitch.mean + 1.5708), y_weight, 1);
     int16_t dx = pix_x - last_pix_x, dy = pix_y - last_pix_y;
     last_pix_x = pix_x;
     last_pix_y = pix_y;
-    platform_printf("mouse:%f,%f,%f,%f,%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3, q_pitch.mean * 57.3, q_posy.mean, y, dis, dx, dy, pix_x, pix_y);
+    float aoa = 0;
+    algo_get_uwb_data_aoa(&aoa);
+    platform_printf("mouse:%f,%f,%f,%f,%f,%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3, q_pitch.mean * 57.3, aoa * 57.3, q_posy.mean, y, dis, dx, dy, pix_x, pix_y);
     extern uint8_t ready_output_xy;
-    if (ready_output_xy || 1)
+    if (ready_output_xy)
     {
         bsp_usb_handle_hid_mouse_report(dx, dy, 0);
+    }
+    else
+    {
+        bsp_usb_handle_hid_mouse_report(100, 100, 0);
     }
 }

@@ -33,7 +33,7 @@ void algorithm_init()
     platform_printf("algo inited!\n");
 }
 
-typedef uint64_t Tick_t;
+
 Tick_t tick, last_imu_data_tick, last_uwb_data_tick, last_mouse_tick;
 Tick_t get_tick()
 {
@@ -109,7 +109,7 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw[3], int16_t acc_da
         // platform_printf("uwb_data:%d,%d,%d,%d\n", (int)(uwb_data.dis * 1000), (int)(uwb_data.aoa * 57.3 * 1000), (int)(uwb_data.x * 1000), (int)(uwb_data.y * 1000));
     }
     float uwbt = tick_2_second(tick - last_uwb_data_tick);
-    if (uwbt > 10)
+    if (uwbt > 1)
     {
         // uwb_uart_init();
         platform_printf("reinit\n");

@@ -68,7 +68,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             kalman3_init(&g_n_b_kalman, g_x0, P0, Q, R);
             kalman3_init(&m_n_b_kalman, m_x0, P0, Q, R);
             platform_printf("initg:%f,%f,%f\n", g_x0[0], g_x0[1], g_x0[2]);
-            platform_printf("initm:%f,%f,%f,%f\n", m_x0[0], m_x0[1], m_x0[2], aoa *57.3);
+            platform_printf("initm:%f,%f,%f,%f\n", m_x0[0], m_x0[1], m_x0[2], aoa * 57.3);
             platform_printf("\nattitude init!\n\n");
 
             cal_cbn(g_n_b_kalman.x_k_1.pData, m_n_b_kalman.x_k_1.pData, cbn);
@@ -92,7 +92,7 @@ void attitude_calculate(float t, uint8_t uwb_data_ready)
             gnb_only_predict = 0;
 
             float tmp = fabsf(sqrt_carmack(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]) - G_CONST);
-            float weight = tmp * tmp * 10000.f;
+            float weight = tmp * tmp * 5000.f;
             float R_t[9] = {10000, 0, 0, 0, 10000, 0, 0, 0, 10000};
             R_t[0] = weight;
             R_t[4] = weight;
@@ -228,10 +228,14 @@ void cal_so3(float w[3], float t, float result[9])
 
 void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
 {
-    static float gyro_bias[3] = {0};
+    static float gyro_bias[3] = {0.015936f, -0.004048f, 0.013848f};
     static uint8_t cali_if = 0;
     static uint8_t start_if = 0;
     static uint16_t freeze_count = 0;
+    if (cali_if == 0)
+    {
+        // platform_printf("gyro_bias:%f,%f,%f,%d,%d,%d\n", gyro_data[0], gyro_data[1], gyro_data[2], acc_data_raw[0], acc_data_raw[1], acc_data_raw[2]);
+    }
 
     if (freeze_count > 0)
         freeze_count--;
@@ -272,8 +276,10 @@ void gyro_data_zero_cali(float gyro_data[3], int16_t acc_data_raw[3])
                     gyro_bias[0] = gyro_bias_sum[0] / 25;
                     gyro_bias[1] = gyro_bias_sum[1] / 25;
                     gyro_bias[2] = gyro_bias_sum[2] / 25;
+                    platform_printf("gyro_bias:%f,%f,%f\n", gyro_bias[0], gyro_bias[1], gyro_bias[2]);
                     freeze_count = 40000;
                     start_if = 0;
+                    cali_if = 1;
                 }
             }
             else

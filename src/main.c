@@ -203,9 +203,9 @@ void btn_task(void *p)
     vTaskDelay(10);
     while (1)
     {
-        vTaskDelay(10);
         btn_state = GIO_ReadValue(BTN_IO_INDEX);
-        if (last_btn_state != btn_state)
+        vTaskDelay(10);
+        if (last_btn_state != btn_state && btn_state == GIO_ReadValue(BTN_IO_INDEX))
         {
             last_btn_state = btn_state;
             if (!btn_state)
