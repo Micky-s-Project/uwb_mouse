@@ -12,6 +12,7 @@
 #include "mouse.h"
 #include "sc7i22.h"
 #include "uwb_data_parser.h"
+#include "algo_interfaces.h"
 #include "RTE_Components.h" // Component selection
 /*
             时间戳
