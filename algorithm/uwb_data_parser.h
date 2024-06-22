@@ -17,6 +17,6 @@ void algo_get_uwb_data_xy(float *pdata);
 void algo_get_uwb_data_aoa(float *pdata);
 void algo_get_uwb_data_dis(float *pdata);
 
-void get_uwb_data(UWB_DATA_t *p);
+uint8_t get_uwb_data(UWB_DATA_t *p);
 void uwb_parser_test();
 #endif // UWB_DATA_PARSER_H

@@ -11,6 +11,7 @@
 #include "uwb.h"
 #include "../data/setup_soc.cgen"
 #include "bsp_usb_hid.h"
+#include "button.h"
 
 static uint32_t cb_hard_fault(hard_fault_info_t *info, void *_)
 {
@@ -187,39 +188,6 @@ uint32_t query_deep_sleep_allowed(void *dummy, void *user_data)
     (void)(user_data);
     // TODO: return 0 if deep sleep is not allowed now; else deep sleep is allowed
     return 0;
-}
-
-#define BTN_IO_INDEX GIO_GPIO_3
-uint8_t ready_output_xy = 0;
-void btn_task(void *p)
-{
-    PINCTRL_SetPadMux(BTN_IO_INDEX, IO_SOURCE_GPIO);
-    PINCTRL_Pull(BTN_IO_INDEX, PINCTRL_PULL_UP);
-    GIO_SetDirection((GIO_Index_t)BTN_IO_INDEX, (GIO_Direction_t)GIO_DIR_INPUT);
-    uint8_t btn_state;
-    uint8_t last_btn_state;
-    uint8_t down_count = 0;
-    platform_printf("btn_task inited\n");
-    vTaskDelay(10);
-    while (1)
-    {
-        btn_state = GIO_ReadValue(BTN_IO_INDEX);
-        vTaskDelay(10);
-        if (last_btn_state != btn_state && btn_state == GIO_ReadValue(BTN_IO_INDEX))
-        {
-            last_btn_state = btn_state;
-            if (!btn_state)
-            {
-                mouse_control_init();
-                platform_printf("btn down\n");
-                down_count++;
-                if (down_count >= 2)
-                {
-                    ready_output_xy = 1;
-                }
-            }
-        }
-    }
 }
 
 int app_main()

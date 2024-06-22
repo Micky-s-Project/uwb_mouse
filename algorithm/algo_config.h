@@ -3,22 +3,27 @@
 #include "platform_api.h"
 
 // #define ALGO_DEBUG               platform_printf
-#define ALGO_DEBUG do{} while (0);
+#define ALGO_DEBUG \
+    do             \
+    {              \
+    } while (0);
 
-#define SENSOR_GYRO_RANGE        2000
-#define SENSOR_ACC_RANGE         16
+#define SENSOR_GYRO_RANGE 2000
+#define SENSOR_ACC_RANGE 16
 
-#define TAG_ROLE                 1
+#define TAG_ROLE 1
 // #define G_CONST                  9.80665
-#define G_CONST                  10.2
-#define US_2_S                   1000000
-#define IMU_DATA_RATE            8000
-#define UWB_DATA_RATE            100
-#define CALCULATE_T              0.000125
-#define CALCULATE_RATE           8000
-#define CALCULATE_TT2            0.0000000078125
-#define ATTITUDE_KALMAN_CAL_RATE 1000
-#define POSITION_KALMAN_CAL_RATE 100
+#define G_CONST 10.00            // 换板子需要重新计算此值 计算方式为sqrtf(acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2])
+#define US_2_S 1000000
+
+#define ACC_UPDATE_KALMAN_RATE 1 // 垂直角不准或垂直角漂移加大这个
+#define UWB_UPDATE_KALMAN_RATE 2 // 水平角不准或水平角漂移加大这个
+#define MOUSE_MOVE_RATE 50       // 鼠标输出速率
+#define ACC_DYNAMIC_R 1          // 上下抖尝试关闭(注释)这个,垂直角不准尝试打开这个
+// #define UWB_DYNAMIC_R 1          // 左右抖尝试关闭(注释)这个,水平角不准尝试打开这个
+#define UWB_R 10000.0            // 抖可以调大这个
+#define ACC_R 1000000.0          // 上下抖可以调大这个
+#define KALMAN_Q 0.0001
 
 #if SENSOR_GYRO_RANGE == 2000
 #define GYRO_DATA_SCALE 0.001065264436032 // 2000/180*pi/32768
@@ -39,5 +44,3 @@
 #elif SENSOR_ACC_RANGE == 2
 #define ACC_DATA_SCALE 0.0005987548828125 // acc_scale/data_scale 16g
 #endif
-
-#define UWB_DATA_SCALE 0.001

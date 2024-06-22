@@ -3,7 +3,7 @@
 
 #include "FreeRTOS.h"
 #include "queue.h"
-void uwb_uart_test();
+void uwb_uart_reset();
 void uwb_uart_init();
 QueueHandle_t get_uwb_queue();
 #endif /* __UWB_H__ */

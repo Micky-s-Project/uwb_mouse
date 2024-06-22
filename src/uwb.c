@@ -66,7 +66,7 @@ uint32_t uart1_isr(void *user_data)
 }
 StaticQueue_t xQueueBuffer;
 uint8_t uwb_buff[1024];
-void uwb_uart_test()
+void uwb_uart_reset()
 {
     // platform_printf("uwb uart%s\n", uwb_buff);
     uart_reset(APB_UART1);

@@ -392,6 +392,11 @@
               <FileType>1</FileType>
               <FilePath>.\sdk\src\BSP\bsp_usb_hid.c</FilePath>
             </File>
+            <File>
+              <FileName>button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\button.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -573,11 +578,6 @@
               <FilePath>.\algorithm\my_math.c</FilePath>
             </File>
             <File>
-              <FileName>position_calculator.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\algorithm\position_calculator.c</FilePath>
-            </File>
-            <File>
               <FileName>attitude_calculator.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\algorithm\attitude_calculator.c</FilePath>
@@ -596,6 +596,16 @@
               <FileName>uwb_data_parser.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\algorithm\uwb_data_parser.c</FilePath>
+            </File>
+            <File>
+              <FileName>algo_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\algorithm\algo_main.c</FilePath>
+            </File>
+            <File>
+              <FileName>imu_data_parser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\algorithm\imu_data_parser.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -43,7 +43,7 @@ void uwb_data_parse_task(void *p)
     while (1)
     {
         // vTaskDelay(pdMS_TO_TICKS(10));
-        if (xQueueReceive(uwb_queue, &data_char, 0xFFFFFFFF))
+        if (xQueueReceive(uwb_queue, &data_char, pdMS_TO_TICKS(1000)))
         {
             // platform_printf("%c", data_char);
 
@@ -96,6 +96,13 @@ void uwb_data_parse_task(void *p)
                 uwb_data_pool_index = 0;
             }
         }
+        else
+        {
+            // uwb串口死机重启
+            platform_printf("reinit\n");
+            uwb_parser_test();
+            uwb_uart_reset();
+        }
     }
 }
 
@@ -127,7 +134,7 @@ void algo_get_uwb_data_dis(float *pdata)
     }
 }
 
-void get_uwb_data(UWB_DATA_t *p)
+uint8_t get_uwb_data(UWB_DATA_t *p)
 {
     if (uwb_data.ready)
     {
@@ -137,5 +144,10 @@ void get_uwb_data(UWB_DATA_t *p)
             uwb_data.ready = 0;
             xSemaphoreGive(uwb_data_mutex);
         }
+        return 1;
+    }
+    else
+    {
+        return 0;
     }
 }

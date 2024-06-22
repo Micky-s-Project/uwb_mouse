@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-
-
+void algo_main();
 
 #endif // ALGO_MAIN_H

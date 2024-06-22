@@ -43,6 +43,10 @@
     "ingsoc.h": "c",
     "rte_components.h": "c",
     "uwb_data_parser.h": "c",
-    "*.cgen": "c"
+    "*.cgen": "c",
+    "imu_data_parse.h": "c",
+    "imu_data_parser.h": "c",
+    "platform_api.h": "c",
+    "sc7i22.h": "c"
   }
 }
