@@ -10,7 +10,7 @@
       <TargetName>Target 1</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6110000::V6.11::.\ARMCLANG</pCCUsed>
+      <pCCUsed>6160000::V6.16::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -185,6 +185,7 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>2</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -338,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>sdk/bundles/typical/inc;sdk/bundles/typical/inc/os;sdk/src/BSP;sdk/src/FWlib;sdk/src/StartUP/ing916;sdk/src/Tools;sdk/src;.\algorithm;.\src</IncludePath>
+              <IncludePath>sdk/bundles/typical/inc;sdk/bundles/typical/inc/os;sdk/src/BSP;sdk/src/FWlib;sdk/src/StartUP/ing916;sdk/src/Tools;sdk/src;.\algorithm;.\src;.\2P4G</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -351,7 +352,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -391,6 +392,31 @@
               <FileName>bsp_usb_hid.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\sdk\src\BSP\bsp_usb_hid.c</FilePath>
+            </File>
+            <File>
+              <FileName>profile.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\profile.c</FilePath>
+            </File>
+            <File>
+              <FileName>wireless.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\wireless.c</FilePath>
+            </File>
+            <File>
+              <FileName>TEST_2P4G.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\TEST_2P4G.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart_console.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\uart_console.c</FilePath>
+            </File>
+            <File>
+              <FileName>my_irq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\my_irq.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -600,6 +626,21 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Wireless</GroupName>
+          <Files>
+            <File>
+              <FileName>BLE_2P4G_Switch.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>.\2P4G\BLE_2P4G_Switch.lib</FilePath>
+            </File>
+            <File>
+              <FileName>ing_2p4g.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\2P4G\ing_2p4g.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
@@ -618,5 +659,14 @@
     </components>
     <files/>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>uwb_mouse</LayName>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>
