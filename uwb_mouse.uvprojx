@@ -404,16 +404,6 @@
               <FilePath>.\src\wireless.c</FilePath>
             </File>
             <File>
-              <FileName>TEST_2P4G.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\TEST_2P4G.c</FilePath>
-            </File>
-            <File>
-              <FileName>uart_console.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\uart_console.c</FilePath>
-            </File>
-            <File>
               <FileName>my_irq.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\my_irq.c</FilePath>

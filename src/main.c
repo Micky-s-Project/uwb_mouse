@@ -12,7 +12,7 @@
 #include "../data/setup_soc.cgen"
 #include "bsp_usb_hid.h"
 #include "profile.h"
-#include "TEST_2P4G.h"
+#include "wireless.h"
 
 static uint32_t cb_hard_fault(hard_fault_info_t *info, void *_)
 {
@@ -212,7 +212,9 @@ void btn_task(void *p)
             last_btn_state = btn_state;
             if (!btn_state)
             {
-                mouse_control_init();
+
+                wireless_send("wireless test", 14);
+                // mouse_control_init();
                 platform_printf("btn down\n");
                 down_count++;
                 if (down_count >= 2)
@@ -224,39 +226,6 @@ void btn_task(void *p)
     }
 }
 
-// static uint8_t slave_tx_len = 4;
-// static uint8_t rx_data[256];
-void wireless_task(void *p)
-{
-    extern uint8_t bt_is_inited;
-    ing2p4g_status_t state;
-    uint16_t i;
-    static ING2P4G_RxPacket rx_packet;
-    while (!bt_is_inited)
-    {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-
-    ing24g_test_switch_mode_trigger(MODE_2G4);
-    ing2p4g_set_2g4_work_mode(MODE_SLAVE);
-    // extern void cmd_rx_continus(const char *param);
-    // cmd_rx_continus("c");
-    while (1)
-    {
-        // vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // state = ing2p4g_get_rx_data(&rx_packet);
-        // state = ing2p4g_start_2p4g_rx(rx_packet.DataLen, rx_packet.Data);
-        state = ing2p4g_get_rx_data(&rx_packet);
-        if (state == ING2P4G_SUCCESS)
-        {
-            
-            platform_printf("Rx data: len:%d ",rx_packet.DataLen);
-            for (i = 0; i < rx_packet.DataLen; i++)
-                platform_printf("%d ", rx_packet.Data[i]);
-            platform_printf(".\r\n");
-        }
-    }
-}
 
 int app_main()
 {
@@ -274,14 +243,15 @@ int app_main()
 
     setup_peripherals();
     cube_setup_peripherals();
-    // xTaskCreate(btn_task, "btn_task", 128, NULL, 2, NULL);
-    // bsp_usb_init();
+
     // sc7122_init();
     // uwb_uart_init();
     // algorithm_init();
+    bsp_usb_init();
 
     ing2p4g_init_dual_mode();
-    ing24g_test_init();
-    xTaskCreate(wireless_task, "wireless_task", 512, NULL, 0, NULL);
+    wireless_init();
+    xTaskCreate(btn_task, "btn_task", 128, NULL, 2, NULL);
+    
     return 0;
 }

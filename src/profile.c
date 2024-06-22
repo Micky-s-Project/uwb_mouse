@@ -6,7 +6,7 @@
 #include "btstack_defines.h"
 #include "bluetooth_hci.h"
 #include "profile.h"
-#include "TEST_2P4G.h"
+#include "wireless.h"
 
 // GATT characteristic handles
 #include "../data/gatt.const"
