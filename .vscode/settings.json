@@ -47,6 +47,13 @@
     "imu_data_parse.h": "c",
     "imu_data_parser.h": "c",
     "platform_api.h": "c",
-    "sc7i22.h": "c"
+    "sc7i22.h": "c",
+    "ing_2p4g.h": "c",
+    "queue.h": "c",
+    "profile.h": "c",
+    "portable.h": "c",
+    "wireless.h": "c",
+    "my_queue.h": "c",
+    "*.inc": "c"
   }
 }

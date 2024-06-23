@@ -253,5 +253,5 @@ void sc7122_init()
     //    GIO_ConfigIntSource(SENSOR_IRQ_PIN, GIO_INT_EN_LOGIC_HIGH_OR_RISING_EDGE, GIO_INT_EDGE);
     platform_set_irq_callback(PLATFORM_CB_IRQ_GPIO, gpio0_isr, NULL);
 
-    xTaskCreate(sensor_updata_task, "sensor updata", 384, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, &sensor_task_handle);
+    xTaskCreate(sensor_updata_task, "sensor updata", 256, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, &sensor_task_handle);
 }

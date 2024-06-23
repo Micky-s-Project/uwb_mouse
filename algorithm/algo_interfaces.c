@@ -2,7 +2,7 @@
  * @Author: Jhaoz0133 JHao_Z@163.com
  * @Date: 2024-06-01 00:09:11
  * @LastEditors: Jhaoz0133 JHao_Z@163.com
- * @LastEditTime: 2024-06-22 23:09:22
+ * @LastEditTime: 2024-06-23 01:31:17
  * @FilePath: \uwb_mouse\algorithm\algo_interfaces.c
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -23,11 +23,12 @@
 #include "algo_interfaces.h"
 #include "algo_main.h"
 #include "RTE_Components.h"
+#include "portable.h"
+
 
 void algorithm_init()
 {
-    xTaskCreate(uwb_data_parse_task, "uwb_data_parse_task", 512 * 2, NULL, configMAX_PRIORITIES - 1 /* tskIDLE_PRIORITY */, NULL);
-//    mouse_init();
+    //    mouse_init();
     platform_printf("algo inited!\n");
 }
 
@@ -61,7 +62,7 @@ void algo_imu_data_update_event_handler(int16_t gyro_data_raw_x, int16_t gyro_da
         last_mouse_tick = tick;
         float euler[3] = {0};
         attitude_calculator_get_euler(euler);
-        mouse_data_send(euler[0], euler[2], 0);
+        mouse_data_send(0, euler[0], euler[2]);
 
         platform_printf("t:%f,w:%f,%f,%f,a:%f,%f,%f\n", tick_2_second(tick - last_imu_data_tick), imu_data.gyro_data[0], imu_data.gyro_data[1], imu_data.gyro_data[2], imu_data.acc_data[0], imu_data.acc_data[1], imu_data.acc_data[2]);
         platform_printf("e:%f,%f,%f\n", euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3);

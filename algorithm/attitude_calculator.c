@@ -114,7 +114,8 @@ void attitude_uwb_update()
 
         cal_cbn(g_n_b_kalman.x_pdata, m_n_b_kalman.x_pdata, cbn);
         cal_euler(cbn);
-        platform_printf("init:%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", aoa * 57.3, euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3, m_x0[0], m_x0[1], m_x0[2], f[0], f[1], f[2]);
+        // platform_printf("init:%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", aoa * 57.3, euler[0] * 57.3, euler[1] * 57.3, euler[2] * 57.3, m_x0[0], m_x0[1], m_x0[2], f[0], f[1], f[2]);
+        platform_printf("init:");
     }
     else
     {
@@ -150,7 +151,7 @@ void attitude_acc_update()
 #endif
 
         kalman3_update(&g_n_b_kalman, f);
-        platform_printf("p = %f\n", g_n_b_kalman.P_pdata[0]);
+        // platform_printf("p = %f\n", g_n_b_kalman.P_pdata[0]);
         cal_cbn(g_n_b_kalman.x_pdata, m_n_b_kalman.x_pdata, cbn);
         cal_euler(cbn);
     }

@@ -65,15 +65,16 @@ uint32_t uart1_isr(void *user_data)
     return 0;
 }
 StaticQueue_t xQueueBuffer;
-uint8_t uwb_buff[1024];
+uint8_t uwb_buff[512];
 void uwb_uart_reset()
 {
     // platform_printf("uwb uart%s\n", uwb_buff);
     uart_reset(APB_UART1);
+    xQueueReset(uwb_queue);
 }
 void uwb_uart_init()
 {
-    uwb_queue = xQueueCreateStatic(1024, 1, &(uwb_buff[0]), &xQueueBuffer);
+    uwb_queue = xQueueCreateStatic(512, 1, &(uwb_buff[0]), &xQueueBuffer);
     if(uwb_queue == 0)
     {
         platform_printf("uwb_queue create fail!!\n");

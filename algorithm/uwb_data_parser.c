@@ -6,13 +6,24 @@
 #include "semphr.h"
 #include "uwb.h"
 #include "uwb_data_parser.h"
+#include "platform_api.h"
+
 uint8_t uwb_data_pool[512] = {0};
 uint16_t uwb_data_pool_index = 0;
 static UWB_DATA_t uwb_data = {0};
+
 static SemaphoreHandle_t uwb_data_mutex = NULL;
 void uwb_parser_test()
 {
     platform_printf("uwb_data_raw:%s,%d\n", uwb_data_pool, uwb_data_pool_index);
+}
+
+#define STACK_SIZE 512
+StackType_t xStack[STACK_SIZE];
+StaticTask_t xTaskBuffer;
+void uwb_data_parser_init()
+{
+    xTaskCreateStatic(uwb_data_parse_task, "uwb_data_parse_task", STACK_SIZE, NULL, configMAX_PRIORITIES - 1, xStack, &xTaskBuffer);
 }
 void uwb_data_parse_task(void *p)
 {

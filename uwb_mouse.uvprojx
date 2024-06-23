@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>sdk/bundles/typical/inc;sdk/bundles/typical/inc/os;sdk/src/BSP;sdk/src/FWlib;sdk/src/StartUP/ing916;sdk/src/Tools;sdk/src;.\algorithm;.\src</IncludePath>
+              <IncludePath>sdk/bundles/typical/inc;sdk/bundles/typical/inc/os;sdk/src/BSP;sdk/src/FWlib;sdk/src/StartUP/ing916;sdk/src/Tools;sdk/src;.\algorithm;.\src;.\2P4G</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -391,6 +391,21 @@
               <FileName>bsp_usb_hid.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\sdk\src\BSP\bsp_usb_hid.c</FilePath>
+            </File>
+            <File>
+              <FileName>profile.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\profile.c</FilePath>
+            </File>
+            <File>
+              <FileName>wireless.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\wireless.c</FilePath>
+            </File>
+            <File>
+              <FileName>my_irq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\my_irq.c</FilePath>
             </File>
             <File>
               <FileName>button.c</FileName>
@@ -606,6 +621,26 @@
               <FileName>imu_data_parser.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\algorithm\imu_data_parser.c</FilePath>
+            </File>
+            <File>
+              <FileName>wireless_data_parser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\algorithm\wireless_data_parser.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Wireless</GroupName>
+          <Files>
+            <File>
+              <FileName>BLE_2P4G_Switch.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>.\2P4G\BLE_2P4G_Switch.lib</FilePath>
+            </File>
+            <File>
+              <FileName>ing_2p4g.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\2P4G\ing_2p4g.h</FilePath>
             </File>
           </Files>
         </Group>

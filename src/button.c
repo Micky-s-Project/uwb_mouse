@@ -6,10 +6,9 @@
 #include "platform_api.h"
 #include "uwb.h"
 
-
 #define BTN_IO_INDEX GIO_GPIO_3
 
-uint8_t ready_output_xy = 0;
+// uint8_t ready_output_xy = 0;
 __attribute__((weak)) void btn_down_event_handler(uint8_t btn_index)
 {
 }
@@ -40,6 +39,7 @@ void btn_task(void *p)
                 // {
                 //     ready_output_xy = 1;
                 // }
+
                 btn_down_event_handler(1);
             }
         }

@@ -10,10 +10,15 @@
 #define MOUSE_H
 
 #include <stdint.h>
+#include "wireless.h"
 
 void mouse_init();
-void mouse_cal_pix(float pitch, float yaw, float y);
+void mouse_cal_pix(float tag_pitch, float tag_yaw, float anchor_aoa, float dis);
 void mouse_control_init(float tag_pitch, float tag_yaw, float anchor_aoa, float dis);
 
-void mouse_data_send(float pitch, float yaw, uint8_t btn);
+void mouse_data_send(uint8_t btn, float pitch, float yaw);
+
+#if WIRELESS_SLAVE
+void btn_down_event_handler(uint8_t btn_index);
+#endif
 #endif

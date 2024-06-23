@@ -12,6 +12,8 @@
 #include "../data/setup_soc.cgen"
 #include "bsp_usb_hid.h"
 #include "button.h"
+#include "profile.h"
+#include "wireless.h"
 
 static uint32_t cb_hard_fault(hard_fault_info_t *info, void *_)
 {
@@ -192,9 +194,10 @@ uint32_t query_deep_sleep_allowed(void *dummy, void *user_data)
 
 int app_main()
 {
-    //    platform_set_evt_callback(PLATFORM_CB_EVT_PROFILE_INIT, setup_profile, NULL);
+
     cube_soc_init();
     // setup handlers
+    platform_set_evt_callback(PLATFORM_CB_EVT_PROFILE_INIT, setup_profile, NULL);
     platform_set_evt_callback(PLATFORM_CB_EVT_HARD_FAULT, (f_platform_evt_cb)cb_hard_fault, NULL);
     platform_set_evt_callback(PLATFORM_CB_EVT_ASSERTION, (f_platform_evt_cb)cb_assertion, NULL);
     platform_set_evt_callback(PLATFORM_CB_EVT_HEAP_OOM, (f_platform_evt_cb)cb_heap_out_of_mem, NULL);
@@ -205,11 +208,17 @@ int app_main()
 
     setup_peripherals();
     cube_setup_peripherals();
-    xTaskCreate(btn_task, "btn_task", 128, NULL, 2, NULL);
-    bsp_usb_init();
-    sc7122_init();
     uwb_uart_init();
-    algorithm_init();
-
+    uwb_data_parser_init();
+#if WIRELESS_SLAVE == 0
+    sc7122_init();
+#endif
+    bsp_usb_init();
+    ing2p4g_init_dual_mode();
+    wireless_init();
+    xTaskCreate(btn_task, "btn_task", 128, NULL, 2, NULL);
+#if WIRELESS_SLAVE == 1
+    mouse_init();
+#endif
     return 0;
 }
