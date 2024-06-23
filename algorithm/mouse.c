@@ -157,13 +157,14 @@ int16_t angel_2_pix(float angel, float weight, uint8_t h)
  * @param {float} dis 两个板子间距离，两个板子输出的应该一样
  * @return {*}
  */
+uint8_t btn_state = 0;
 void mouse_cal_pix(float tag_pitch, float tag_yaw, float anchor_aoa, float dis)
 {
     // 均值滤波
     queue_input(&q_pitch, tag_pitch);
     queue_input(&q_yaw, tag_yaw);
     queue_input(&q_posy, dis * cosf(anchor_aoa));
-    
+
     if (ready_output_xy)
     {
         // 防止UWB数据不准来回抖动
@@ -188,7 +189,7 @@ void mouse_cal_pix(float tag_pitch, float tag_yaw, float anchor_aoa, float dis)
 
         // 初始向右下角
 
-        bsp_usb_handle_hid_mouse_report(dx, dy, 0);
+        bsp_usb_handle_hid_mouse_report(dx, dy, btn_state);
         platform_printf("mouse:%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d\n", q_yaw.mean * 57.3, q_pitch.mean * 57.3, anchor_aoa * 57.3, y_weight, q_posy.mean, y, y_last, dis, dx, dy, pix_x, pix_y);
     }
     else
@@ -197,6 +198,10 @@ void mouse_cal_pix(float tag_pitch, float tag_yaw, float anchor_aoa, float dis)
     }
 }
 
+void set_btn_state(uint8_t state)
+{
+    btn_state = state;
+}
 void btn_down_event_handler(uint8_t btn_index)
 {
     float aoa = 0, dis = 0;
@@ -208,17 +213,20 @@ void btn_down_event_handler(uint8_t btn_index)
         mouse_cal_pix(get_pitch(), get_yaw(), aoa, dis);
         break;
     case 1:
-        if (ready_output_xy)
-        {
-            bsp_usb_handle_hid_mouse_report(0, 0, 1);
-        }
-        else
+        // if (ready_output_xy)
+        // {
+        //     bsp_usb_handle_hid_mouse_report(0, 0, 1);
+        // }
+        // else
+        // {
+        if (!ready_output_xy)
         {
             float aoa = 0, dis = 0;
             algo_get_uwb_data_aoa(&aoa);
             algo_get_uwb_data_dis(&dis);
             mouse_control_init(get_pitch(), get_yaw(), aoa, dis);
         }
+        // }
         break;
     case 2:
         bsp_usb_handle_hid_mouse_report(0, 0, 2);

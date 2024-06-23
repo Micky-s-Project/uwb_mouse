@@ -39,7 +39,7 @@ void btn_task(void *p)
                 // {
                 //     ready_output_xy = 1;
                 // }
-
+                set_btn_state(btn_state);
                 btn_down_event_handler(1);
             }
         }

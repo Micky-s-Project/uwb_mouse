@@ -15,6 +15,7 @@
 void mouse_init();
 void mouse_cal_pix(float tag_pitch, float tag_yaw, float anchor_aoa, float dis);
 void mouse_control_init(float tag_pitch, float tag_yaw, float anchor_aoa, float dis);
+void set_btn_state(uint8_t state);
 
 void mouse_data_send(uint8_t btn, float pitch, float yaw);
 
